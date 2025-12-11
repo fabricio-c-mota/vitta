@@ -73,28 +73,30 @@ Funciona como menu principal do paciente, com navegação simples e intuitiva.
 
 ### 3.2 Tela de Disponibilidade / Agendamento
 
-**Arquivo:** `app/(patient)/schedule.tsx`
+**Arquivo:** `src/view/pages/patient/ScheduleScreen.tsx`
 
 **Objetivo:**  
 Permitir que o paciente visualize os dias e horários disponíveis para consulta.
 
 **Descrição:**  
 Exibe um calendário interativo mensal (react-native-calendars) onde:
-- Dias com horários disponíveis são marcados com indicador visual
+- Apenas dias úteis (Segunda a Sexta) são marcados como disponíveis
 - Ao clicar em um dia, são exibidos os horários vagos daquele dia
+- Horários disponíveis configurados: **9h-11h, 11h-13h, 13h-15h, 14h-16h** (consultas de 2 horas)
 - O paciente seleciona um horário e confirma a solicitação
 
 **Elementos principais:**
 - Calendário mensal interativo com dias marcados
-- Lista de horários disponíveis do dia selecionado
+- Lista de horários disponíveis do dia selecionado (filtrando já ocupados)
 - Cards de horário selecionáveis
 - Botão "Solicitar Consulta" (habilitado apenas quando há horário selecionado)
 - Indicador de carregamento durante operações
 
 **Restrições:**
-- Apenas horários disponíveis são exibidos.
-- Horários já ocupados por consultas aceitas não aparecem.
-- Não é possível solicitar sem selecionar um horário.
+- Apenas horários disponíveis são exibidos
+- Horários já ocupados por consultas aceitas não aparecem
+- Fins de semana não são exibidos como disponíveis
+- Não é possível solicitar sem selecionar um horário
 
 **Comportamento:**  
 Ao confirmar a solicitação:
@@ -127,7 +129,7 @@ Ao confirmar:
 
 ### 3.4 Tela de Minhas Consultas
 
-**Arquivo:** `app/(patient)/my-appointments.tsx`
+**Arquivo:** `src/view/pages/patient/MyAppointmentsScreen.tsx`
 
 **Objetivo:**  
 Permitir ao paciente acompanhar o andamento de suas consultas em tempo real.
@@ -159,7 +161,7 @@ Exibe uma lista de todas as consultas solicitadas pelo paciente com atualizaçã
 
 ### 3.5 Tela de Detalhes da Consulta (Paciente)
 
-**Arquivo:** `app/(patient)/appointment/[id].tsx`
+**Arquivo:** `src/view/pages/patient/AppointmentDetailsScreen.tsx`
 
 **Objetivo:**  
 Exibir informações completas de uma consulta específica e permitir ações.
@@ -206,7 +208,7 @@ Apresenta acesso direto a:
 
 ### 4.2 Tela de Solicitações Pendentes
 
-**Arquivo:** `app/(nutritionist)/pending-requests.tsx`
+**Arquivo:** `src/view/pages/nutritionist/PendingRequestsScreen.tsx`
 
 **Objetivo:**  
 Permitir que a nutricionista visualize e gerencie pedidos de consulta pendentes.
@@ -268,7 +270,7 @@ Ao recusar:
 
 ### 4.4 Tela de Agenda da Nutricionista
 
-**Arquivo:** `app/(nutritionist)/agenda.tsx`
+**Arquivo:** `src/view/pages/nutritionist/AgendaScreen.tsx`
 
 **Objetivo:**  
 Visualizar todas as consultas confirmadas em formato de calendário.
@@ -297,10 +299,10 @@ Apresenta um calendário interativo (react-native-calendars) mostrando apenas co
 
 ### 4.5 Tela de Detalhes da Consulta (Nutricionista)
 
-**Arquivo:** `app/(nutritionist)/appointment/[id].tsx`
+**Arquivo:** `src/view/pages/nutritionist/AppointmentDetailsScreen.tsx`
 
 **Objetivo:**  
-Visualizar e gerenciar uma consulta (pendente ou confirmada).
+Visualizar e gerenciar uma consulta (pendente, aceita ou cancelada).
 
 **Descrição:**  
 Exibe os detalhes completos da consulta com ações baseadas no status.
@@ -314,12 +316,14 @@ Exibe os detalhes completos da consulta com ações baseadas no status.
 - Botões de ação:
   - Pendente: "Aceitar" e "Recusar"
   - Aceita: "Cancelar Consulta"
+  - Cancelada: "Aceitar Novamente"
 
 **Comportamento:**
-- Ao aceitar, verifica conflitos e alerta se houver
+- Ao aceitar pendente, verifica conflitos e alerta se houver
 - Ao recusar, atualiza status e retorna
 - Ao cancelar, atualiza status e retorna para Agenda
-- Consultas recusadas ou canceladas exibem apenas informações
+- Ao aceitar novamente consulta cancelada, verifica conflitos e reativa
+- Consultas recusadas exibem apenas informações
 
 ---
 

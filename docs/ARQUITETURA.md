@@ -70,37 +70,98 @@ src/
 ├─ app/                      # Expo Router - rotas, sem regra de negócio
 │  ├─ _layout.tsx
 │  └─ (arquivos de rota)     # mapeiam para páginas em src/view/pages
-│
 ├─ view/                     # UI (páginas e componentes)
 │  ├─ pages/
 │  │   ├─ patient/
 │  │   └─ nutritionist/
 │  ├─ components/
 │  └─ themes/
-│
 ├─ viewmodel/                # ViewModels (classes + hooks)
-│
 ├─ usecase/                  # Casos de uso / regras de negócio
-│
 ├─ model/                    # Domínio (puro)
 │  ├─ entities/
-│  ├─ services/              # Contratos/Interfaces (ex.: repositórios, providers)
+│  ├─ factories/             # Factories para criação de entidades
+│  ├─ services/              # Contratos/Interfaces (ex.: providers)
+│  ├─ repositories/          # Persistência (ex.: repositórios)
 │  └─ errors/
-│
 ├─ infra/                    # Implementações concretas
 │  ├─ firebase/
 │  ├─ notifications/
 │  └─ calendar/
-│
 ├─ di/                       # Injeção de dependências
-│  └─ container.ts           # Fábricas/registrations
-│
+│  └─ container.ts           # Fábricas de Use Cases e ViewModels
 └─ tests/
   ├─ unit/
   │   ├─ model/
   │   ├─ usecase/
   │   └─ viewmodel/
   └─ integration/
+```
+
+### 3.1 Factories vs DI Container
+
+O projeto usa dois tipos de "fábricas" com propósitos distintos:
+
+| Local | Propósito | Exemplo |
+|-------|-----------|---------|
+| `model/factories/` | Criar **entidades de domínio** com validações | `makeUser()`, `makeAppointment()`, `makeTimeSlot()` |
+| `di/container.ts` | Montar **dependências** (Use Cases, ViewModels, Repositórios) | `makeRequestAppointmentUseCase()` |
+
+**Factories de Entidade (`model/factories/`):**
+- Encapsulam lógica de criação de objetos de domínio
+- Aplicam validações e valores default
+- Retornam entidades prontas para uso
+
+```typescript
+// model/factories/makeUser.ts
+export function makeUser(input: CreateUserInput): User {
+  return {
+    id: crypto.randomUUID(),
+    name: input.name,
+    email: input.email,
+    role: input.role,
+    createdAt: new Date(),
+  };
+}
+
+// model/factories/makeAppointment.ts
+export function makeAppointment(input: CreateAppointmentInput): Appointment {
+  return {
+    id: crypto.randomUUID(),
+    patientId: input.patientId,
+    nutritionistId: input.nutritionistId,
+    date: input.date,
+    timeStart: input.timeStart,
+    timeEnd: input.timeEnd,
+    status: 'pending',
+    observations: input.observations ?? null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
+// model/factories/makeTimeSlot.ts
+export function makeTimeSlot(input: CreateTimeSlotInput): TimeSlot {
+  return {
+    date: input.date,
+    timeStart: input.timeStart,
+    timeEnd: input.timeEnd,
+    available: input.available ?? true,
+  };
+}
+```
+
+**DI Container (`di/container.ts`):**
+- Monta árvore de dependências
+- Injeta repositórios e providers nos Use Cases
+- Injeta Use Cases nas ViewModels
+
+```typescript
+// di/container.ts
+export function makeRequestAppointmentUseCase(): RequestAppointmentUseCase {
+  const appointmentRepository = new FirebaseAppointmentRepository();
+  return new RequestAppointmentUseCase(appointmentRepository);
+}
 ```
 
 ---
@@ -209,13 +270,9 @@ O Hook (ex.: `usePatientScheduleViewModel`) apenas:
 tests/
   unit/
     usecase/
-      RequestAppointmentUseCase.spec.ts
-      AcceptAppointmentUseCase.spec.ts
     viewmodel/
-      PatientScheduleViewModel.spec.ts
   integration/
     views/
-      ScheduleScreen.spec.tsx
 ```
 
 ### 5.4 Boas Práticas de Teste
@@ -302,7 +359,90 @@ Sempre que for adicionar uma nova funcionalidade:
 
 ---
 
-## 9. Resumo
+## 9. Configuração de Disponibilidade de Horários
+
+### 9.1 Regras de Disponibilidade
+
+A disponibilidade de horários para consultas é **configurada no código** (hardcoded) com as seguintes regras:
+
+- **Dias disponíveis:** Segunda a Sexta-feira (dias úteis)
+- **Horário de funcionamento:** 9h às 16h
+- **Duração da consulta:** 2 horas cada
+- **Slots de horário:**
+  - 09:00 - 11:00
+  - 11:00 - 13:00
+  - 13:00 - 15:00
+  - 14:00 - 16:00
+- **Fins de semana:** Não disponíveis
+- **Feriados:** Não há tratamento especial (futura implementação se necessário)
+
+### 9.2 Implementação
+
+A lógica de disponibilidade deve estar em:
+- **Use Case:** `GetAvailableTimeSlotsUseCase` ou equivalente
+- **Localização:** `src/usecase/`
+- **Responsabilidade:** Gerar lista de slots disponíveis e filtrar os já ocupados
+
+**Exemplo conceitual:**
+```typescript
+// usecase/GetAvailableTimeSlotsUseCase.ts
+export class GetAvailableTimeSlotsUseCase {
+  private readonly TIME_SLOTS = [
+    { start: '09:00', end: '11:00' },
+    { start: '11:00', end: '13:00' },
+    { start: '13:00', end: '15:00' },
+    { start: '14:00', end: '16:00' },
+  ];
+
+  constructor(
+    private readonly appointmentRepository: IAppointmentRepository
+  ) {}
+
+  async execute(date: Date): Promise<TimeSlot[]> {
+    // Verifica se é dia útil (seg-sex)
+    if (isWeekend(date)) return [];
+    
+    // Busca consultas aceitas para aquela data
+    const acceptedAppointments = await this.appointmentRepository
+      .getAcceptedByDate(date);
+    
+    // Filtra slots já ocupados
+    return this.TIME_SLOTS.filter(slot => 
+      !acceptedAppointments.some(apt => 
+        apt.time === slot.start
+      )
+    );
+  }
+}
+```
+
+### 9.3 Restrições
+
+- **Não há edição de disponibilidade pelo usuário:** A configuração é fixa no código
+- **Conflitos são verificados automaticamente:** Sistema não permite duas consultas aceitas no mesmo horário do mesmo dia
+- **Paciente vê apenas slots livres:** Horários ocupados não aparecem na lista
+
+---
+
+## 10. Funcionalidades Não Implementadas
+
+Para manter o escopo do projeto gerenciável, as seguintes funcionalidades **NÃO** serão implementadas:
+
+### 10.1 Edição de Perfil
+- Usuários não podem editar nome, e-mail ou outros dados
+- Alterações devem ser feitas manualmente no Firebase Console
+
+### 10.2 Recuperação de Senha
+- Não há funcionalidade de "Esqueci minha senha" no app
+- Redefinição de senha deve ser feita manualmente no Firebase Console
+
+### 10.3 Gestão de Disponibilidade
+- Nutricionista não pode alterar horários de funcionamento pelo app
+- Mudanças na configuração de horários requerem alteração no código
+
+---
+
+## 11. Resumo
 
 - O projeto segue **MVVM simplificado** com camadas claras
 - **Domínio não conhece Firebase nem Expo**: apenas interfaces e regras de negócio
