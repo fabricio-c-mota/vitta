@@ -20,3 +20,4 @@ yarn-error.*
 *.pem
 local.properties
 *.tsbuildinfoexpo-env.d.ts
+firestore*
