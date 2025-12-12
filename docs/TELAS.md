@@ -21,6 +21,8 @@ Cada perfil possui telas específicas, acessíveis após autenticação.
 
 ### 2.1 Tela de Abertura / Splash
 
+**Arquivo:** `src/view/pages/SplashScreen.tsx`
+
 **Objetivo:**  
 Identificar visualmente o aplicativo e preparar o ambiente inicial.
 
@@ -37,8 +39,33 @@ Exibe a identidade visual do aplicativo enquanto o sistema verifica:
 
 ### 2.2 Tela de Login
 
+**Arquivo:** `src/view/pages/LoginScreen.tsx`
+
 **Objetivo:**  
 Permitir o acesso seguro ao aplicativo.
+
+---
+
+### 2.3 Tela de Registro
+
+**Arquivo:** `src/view/pages/RegisterScreen.tsx`
+
+**Objetivo:**  
+Permitir que novos pacientes criem uma conta no aplicativo.
+
+**Descrição:**  
+Apresenta campos para cadastro de novo usuário.
+
+**Elementos principais:**
+- Campo de nome
+- Campo de e-mail
+- Campo de senha
+- Botão "Criar Conta"
+- Link "Já tenho conta" para voltar ao login
+- Mensagens de erro em caso de dados inválidos
+
+**Comportamento:**  
+Após registro bem-sucedido, o usuário é automaticamente autenticado e redirecionado para a tela inicial do paciente.
 
 **Descrição:**  
 Apresenta campos para autenticação via e-mail e senha (Firebase Authentication).
@@ -57,6 +84,8 @@ Após login bem-sucedido, o sistema identifica o papel do usuário (paciente ou 
 ## 3. Telas do Perfil Paciente
 
 ### 3.1 Tela Inicial do Paciente
+
+**Arquivo:** `src/view/pages/patient/PatientHomeScreen.tsx`
 
 **Objetivo:**  
 Servir como ponto de entrada para as principais funcionalidades do paciente.
@@ -107,6 +136,8 @@ Ao confirmar a solicitação:
 ---
 
 ### 3.3 Tela de Solicitação de Consulta
+
+**Arquivo:** `src/view/pages/patient/RequestAppointmentScreen.tsx`
 
 **Objetivo:**  
 Confirmar a solicitação de consulta pelo paciente.
@@ -196,6 +227,8 @@ Mostra os detalhes da consulta selecionada com status visual e ações disponív
 
 ### 4.1 Tela Inicial da Nutricionista
 
+**Arquivo:** `src/view/pages/nutritionist/NutritionistHomeScreen.tsx`
+
 **Objetivo:**  
 Organizar o acesso rápido às funções principais da nutricionista.
 
@@ -243,6 +276,8 @@ Ao recusar:
 ---
 
 ### 4.3 Tela de Detalhes da Solicitação
+
+**Arquivo:** `src/view/pages/nutritionist/RequestDetailsScreen.tsx`
 
 **Objetivo:**  
 Permitir a decisão sobre uma solicitação de consulta.

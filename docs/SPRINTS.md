@@ -64,37 +64,50 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 - [x] Entidade `User` (id, email, name, role: "patient" | "nutritionist")
 - [x] Entidade `Appointment` (id, patientId, nutritionistId, date, time, status: "pending" | "accepted" | "rejected" | "cancelled", observations: string opcional)
 - [x] Factory `makeUser` (name, email, role)
-- [ ] Interface `IAuthService` (login, signup, logout, onAuthStateChanged)
-- [ ] Interface `IUserRepository` (getById, create)
-- [ ] Erros de domínio: `AuthenticationError`, `ValidationError`
+- [x] Interface `IAuthService` (login, signup, logout, onAuthStateChanged)
+- [x] Interface `IUserRepository` (getById, create)
+- [x] Erros de domínio: `AuthenticationError`, `ValidationError`, `RepositoryError`
 
 #### Infraestrutura
-- [ ] Configurar Firebase (Auth + Firestore)
-- [ ] Implementar `FirebaseAuthService`
-- [ ] Implementar `FirebaseUserRepository`
-- [ ] Configurar regras de segurança básicas do Firestore
+- [x] Configurar Firebase (Auth + Firestore)
+- [x] Implementar `FirebaseAuthService`
+- [x] Implementar `FirebaseUserRepository`
+- [x] Configurar regras de segurança básicas do Firestore
 
 #### Casos de Uso
-- [ ] `RegisterPatientUseCase` (validações: email válido, senha >= 6 caracteres)
-- [ ] `LoginUseCase` (autenticação + buscar dados do usuário)
-- [ ] `LogoutUseCase`
-- [ ] `GetCurrentUserUseCase`
+- [x] `AuthUseCases` (login, signUp, logout, onAuthStateChanged)
+  - Validações via `AuthValidator` (email válido, senha >= 6 caracteres)
+  - Busca dados completos do usuário no Firestore após autenticação
 
 #### ViewModel
-- [ ] `AuthViewModel` (loading, error, user state)
-- [ ] `useAuthViewModel`
+- [x] `useHomeViewModel` (state: user, error, loading; actions: logout)
+- [x] `useLoginViewModel` (state: user, error, loading, isAuthenticated; actions: login, clearerror)
+- [x] `useSignUpViewModel` (state: user, error, loading; actions: signup, clearerror)
 
 #### View
-- [ ] Tela de Login (`LoginScreen.tsx`)
-- [ ] Tela de Registro (`RegisterScreen.tsx`)
-- [ ] Navegação básica (redirecionar conforme perfil)
-- [ ] Componente de loading
-- [ ] Componente de mensagem de erro
+
+##### Pages
+- [x] `SplashScreen.tsx` - Tela de abertura com verificação de auth
+- [x] `LoginScreen.tsx` - Tela de login
+- [x] `RegisterScreen.tsx` - Tela de registro de paciente
+- [x] `patient/PatientHomeScreen.tsx` - Tela inicial do paciente
+- [x] `nutritionist/NutritionistHomeScreen.tsx` - Tela inicial da nutricionista
+
+##### Components
+- [x] `LoadingIndicator.tsx` - Spinner de carregamento
+- [x] `ErrorMessage.tsx` - Exibição de mensagens de erro
+- [x] `Button.tsx` - Botão reutilizável com estados
+
+##### Themes
+- [x] `theme.ts` - Cores, fontes e espaçamentos padrão
+
+##### Navegação
+- [x] Configurar navegação básica (redirecionar conforme perfil)
 
 #### DI & Configuração
-- [ ] Criar `di/container.ts` com fábricas básicas
-- [ ] Configurar path aliases (`@/*` → `./src/*`)
-- [ ] Configurar variáveis de ambiente (Firebase config)
+- [x] Criar `di/container.ts` com fábricas básicas
+- [x] Configurar path aliases (`@/*` → `./src/*`)
+- [x] Configurar variáveis de ambiente (Firebase config)
 
 #### Testes
 - [ ] Testes unitários: `RegisterPatientUseCase`
