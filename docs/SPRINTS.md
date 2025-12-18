@@ -56,7 +56,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 ### Histórias de Usuário Relacionadas
 
-- [ ] [P01](./HUP.md) - Paciente: Registrar no aplicativo com nome, e-mail e senha
+- [x] [P01](./HUP.md) - Paciente: Registrar no aplicativo com nome, e-mail e senha
 
 ### Entregas
 
@@ -110,9 +110,19 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 - [x] Configurar variáveis de ambiente (Firebase config)
 
 #### Testes
-- [ ] Testes unitários: `RegisterPatientUseCase`
-- [ ] Testes unitários: `LoginUseCase`
-- [ ] Testes de ViewModel: `AuthViewModel`
+
+##### Testes Unitários (6 suítes, 65 testes)
+- [x] **Model/Entities**: User, Appointment (type safety, structure)
+- [x] **Model/Factories**: makeUser (creation, data integrity)
+- [x] **Model/Errors**: AuthError, ValidationError, RepositoryError
+- [x] **Usecase/Validator**: authValidator (email/password validation)
+- [x] **Usecase/Auth**: authUseCases (login, signup, logout, onAuthStateChanged com mocks)
+
+**Cobertura:**
+- Statements: 92.42%
+- Branches: 88.57%
+- Functions: 100%
+- Lines: 92.42%
 
 ### Critérios de Aceitação
 

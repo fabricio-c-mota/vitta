@@ -1,11 +1,11 @@
 import React, { ReactNode } from "react";
-import { TouchableOpacity, StyleSheet, ViewStyle } from "react-native";
+import { TouchableOpacity, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import { colors, spacing, borderRadius } from "@/view/themes/theme";
 
 type HomeCardProps = {
     children: ReactNode;
     backgroundColor?: string;
-    style?: ViewStyle;
+    style?: StyleProp<ViewStyle>;
     onPress?: () => void;
 };
 

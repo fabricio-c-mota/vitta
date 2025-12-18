@@ -4,6 +4,7 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
+    Image
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -44,16 +45,14 @@ export default function PatientHomeScreen() {
 
     return (
         <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
-            {/* Header */}
+            {/* HEADER */}
             <View style={styles.header}>
-                <View style={{ width: 24 }} />
-                <Text style={styles.headerTitle}>Olá, {user?.name || "Paciente"}!</Text>
-                <View style={styles.headerActions}>
-                    <TouchableOpacity onPress={handleNotifications} style={styles.headerIconButton}>
-                        <Feather name="bell" size={22} color={colors.text} />
-                    </TouchableOpacity>
-                    <LogoutButton onPress={handleLogout} />
-                </View>
+                <Image
+                    source={require("../../assets/images/image.png")}
+                    style={styles.avatar}
+                />
+                <Text style={styles.headerText}>Olá, {user?.name || user?.email || "Paciente"}!</Text>
+                <LogoutButton onPress={handleLogout} />
             </View>
 
             {/* Cards */}
@@ -105,27 +104,28 @@ export default function PatientHomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: colors.surface,
         paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.xl,
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
         marginBottom: spacing.xl,
+        justifyContent: "space-between",
     },
-    headerActions: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: spacing.sm,
+    avatar: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        marginRight: spacing.md,
+        backgroundColor: colors.primaryLight,
     },
-    headerIconButton: {
-        padding: spacing.xs,
-    },
-    headerTitle: {
-        fontSize: fontSizes.xl,
-        fontFamily: fonts.bold,
+    headerText: {
+        flex: 1,
+        fontSize: fontSizes.lg,
         color: colors.text,
+        fontFamily: fonts.bold,
     },
     cardsWrapper: {
         gap: spacing.md,
