@@ -10,18 +10,44 @@ import RequestAppointmentUseCase, { IRequestAppointmentUseCase } from "@/usecase
 import ListPatientAppointmentsUseCase, { IListPatientAppointmentsUseCase } from "@/usecase/appointment/listPatientAppointmentsUseCase";
 import GetAppointmentDetailsUseCase, { IGetAppointmentDetailsUseCase } from "@/usecase/appointment/getAppointmentDetailsUseCase";
 import GetNutritionistUseCase, { IGetNutritionistUseCase } from "@/usecase/user/getNutritionistUseCase";
+import AcceptAppointmentUseCase, { IAcceptAppointmentUseCase } from "@/usecase/appointment/acceptAppointmentUseCase";
+import RejectAppointmentUseCase, { IRejectAppointmentUseCase } from "@/usecase/appointment/rejectAppointmentUseCase";
+import ListNutritionistAgendaUseCase, { IListNutritionistAgendaUseCase } from "@/usecase/appointment/listNutritionistAgendaUseCase";
 
-const authService = new FirebaseAuthService();
-const userRepository: IUserRepository = new FirebaseUserRepository();
-const appointmentRepository: IAppointmentRepository = new FirebaseAppointmentRepository();
+let authService: FirebaseAuthService;
+let userRepository: IUserRepository;
+let appointmentRepository: IAppointmentRepository;
+let authUseCases: IAuthUseCases;
+let getAvailableTimeSlotsUseCase: IGetAvailableTimeSlotsUseCase;
+let requestAppointmentUseCase: IRequestAppointmentUseCase;
+let listPatientAppointmentsUseCase: IListPatientAppointmentsUseCase;
+let getAppointmentDetailsUseCase: IGetAppointmentDetailsUseCase;
+let getNutritionistUseCase: IGetNutritionistUseCase;
+let acceptAppointmentUseCase: IAcceptAppointmentUseCase;
+let rejectAppointmentUseCase: IRejectAppointmentUseCase;
+let listNutritionistAgendaUseCase: IListNutritionistAgendaUseCase;
 
-const authUseCases: IAuthUseCases = new AuthUseCases(authService, userRepository);
+try {
+  authService = new FirebaseAuthService();
+  userRepository = new FirebaseUserRepository();
+  appointmentRepository = new FirebaseAppointmentRepository();
 
-const getAvailableTimeSlotsUseCase: IGetAvailableTimeSlotsUseCase = new GetAvailableTimeSlotsUseCase(appointmentRepository);
-const requestAppointmentUseCase: IRequestAppointmentUseCase = new RequestAppointmentUseCase(appointmentRepository);
-const listPatientAppointmentsUseCase: IListPatientAppointmentsUseCase = new ListPatientAppointmentsUseCase(appointmentRepository);
-const getAppointmentDetailsUseCase: IGetAppointmentDetailsUseCase = new GetAppointmentDetailsUseCase(appointmentRepository);
-const getNutritionistUseCase: IGetNutritionistUseCase = new GetNutritionistUseCase(userRepository);
+  authUseCases = new AuthUseCases(authService, userRepository);
+
+  getAvailableTimeSlotsUseCase = new GetAvailableTimeSlotsUseCase(appointmentRepository);
+  requestAppointmentUseCase = new RequestAppointmentUseCase(appointmentRepository);
+  listPatientAppointmentsUseCase = new ListPatientAppointmentsUseCase(appointmentRepository);
+  getAppointmentDetailsUseCase = new GetAppointmentDetailsUseCase(appointmentRepository);
+  getNutritionistUseCase = new GetNutritionistUseCase(userRepository);
+  acceptAppointmentUseCase = new AcceptAppointmentUseCase(appointmentRepository);
+  rejectAppointmentUseCase = new RejectAppointmentUseCase(appointmentRepository);
+  listNutritionistAgendaUseCase = new ListNutritionistAgendaUseCase(appointmentRepository);
+} catch (error) {
+  const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao inicializar container';
+  console.error('Erro fatal ao inicializar dependências:', errorMessage);
+  // Lança o erro para que seja capturado pelo ErrorBoundary no _layout.tsx
+  throw new Error(`Falha ao inicializar aplicação: ${errorMessage}`);
+}
 
 export {
     authUseCases,
@@ -32,5 +58,8 @@ export {
     listPatientAppointmentsUseCase,
     getAppointmentDetailsUseCase,
     getNutritionistUseCase,
+    acceptAppointmentUseCase,
+    rejectAppointmentUseCase,
+    listNutritionistAgendaUseCase,
 };
 
