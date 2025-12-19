@@ -199,4 +199,33 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
 
         return unsubscribe;
     }
+
+    onNutritionistPendingChange(
+        nutritionistId: string,
+        callback: (appointments: Appointment[]) => void
+    ): () => void {
+        const collectionRef = collection(db, this.collectionName);
+        const q = query(
+            collectionRef,
+            where('nutritionistId', '==', nutritionistId),
+            where('status', '==', 'pending'),
+            orderBy('date', 'asc'),
+            orderBy('timeStart', 'asc')
+        );
+
+        const unsubscribe = onSnapshot(
+            q,
+            (snapshot) => {
+                const appointments = snapshot.docs.map(doc =>
+                    this.toAppointment(doc.id, doc.data())
+                );
+                callback(appointments);
+            },
+            (error) => {
+                console.error('Erro ao escutar solicitações pendentes:', error);
+            }
+        );
+
+        return unsubscribe;
+    }
 }
