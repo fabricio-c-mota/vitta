@@ -91,6 +91,19 @@ export default function useNutritionistHomeViewModel(
         loadData();
     }, [loadData]);
 
+    useEffect(() => {
+        if (!nutritionistId) return;
+
+        const unsubscribe = appointmentRepository.onNutritionistPendingChange(
+            nutritionistId,
+            (pending) => {
+                setPendingCount(pending.length);
+            }
+        );
+
+        return unsubscribe;
+    }, [appointmentRepository, nutritionistId]);
+
     const refresh = useCallback(async (): Promise<void> => {
         await loadData();
     }, [loadData]);
@@ -103,12 +116,10 @@ export default function useNutritionistHomeViewModel(
         setShowEmptyState(false);
     }, []);
 
-    // Reset showEmptyState quando appointments mudam
     useEffect(() => {
         setShowEmptyState(!hasAppointmentsToday);
     }, [hasAppointmentsToday]);
 
-    // Auto-dismiss após 3 segundos
     useEffect(() => {
         if (!hasAppointmentsToday && showEmptyState && !loading) {
             const timer = setTimeout(() => {
