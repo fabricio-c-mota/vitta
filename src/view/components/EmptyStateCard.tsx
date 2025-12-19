@@ -6,7 +6,7 @@ import { colors, fonts, spacing, fontSizes, borderRadius } from "@/view/themes/t
 type Props = {
   title: string;
   subtitle?: string;
-  icon?: keyof typeof Feather.glyphMap; // default: "smile"
+  icon?: keyof typeof Feather.glyphMap;
 };
 
 export default function EmptyStateCard({
@@ -29,14 +29,12 @@ export default function EmptyStateCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.inputBackground, // aquele "bege/cinza" do mock
+    backgroundColor: colors.inputBackground,
     borderRadius: borderRadius.xl + 6,
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
     alignItems: "center",
     justifyContent: "center",
-
-    // leve profundidade (quase nada)
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.03)",
   },

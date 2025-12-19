@@ -23,7 +23,7 @@ function getStyle(status: AppointmentStatus, variant: Variant) {
                 return { bg: colors.cancelled, text: colors.background, label: "Cancelada" };
         }
     }
-    // soft variant
+    
     switch (status) {
         case "accepted":
             return { bg: colors.primaryLight, text: colors.primary, label: "Aceita" };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -8,6 +8,7 @@ import { colors, fonts, spacing, fontSizes } from "@/view/themes/theme";
 import ScreenHeader from "@/view/components/ScreenHeader";
 import StatusBadge from "@/view/components/StatusBadge";
 import InfoRow from "@/view/components/InfoRow";
+import ErrorScreen from "@/view/components/ErrorScreen";
 import useAppointmentDetailsViewModel from "@/viewmodel/appointment/useAppointmentDetailsViewModel";
 import { getAppointmentDetailsUseCase, userRepository } from "@/di/container";
 import User from "@/model/entities/user";
@@ -29,6 +30,13 @@ export default function AppointmentDetailsScreen() {
 
     const [nutritionist, setNutritionist] = useState<User | null>(null);
 
+    const retry = useCallback(() => {
+        if (id) {
+            clearError();
+            loadAppointment(id);
+        }
+    }, [id, clearError, loadAppointment]);
+
     useEffect(() => {
         if (id) loadAppointment(id);
     }, [id, loadAppointment]);
@@ -38,10 +46,6 @@ export default function AppointmentDetailsScreen() {
             userRepository.getUserByID(appointment.nutritionistId).then(setNutritionist);
         }
     }, [appointment?.nutritionistId]);
-
-    useEffect(() => {
-        if (error) Alert.alert("Erro", error, [{ text: "OK", onPress: clearError }]);
-    }, [error, clearError]);
 
     function handleCancel() {
         Alert.alert("Cancelar Consulta", "Deseja realmente cancelar?", [
@@ -57,6 +61,15 @@ export default function AppointmentDetailsScreen() {
                 <View style={styles.centered}>
                     <ActivityIndicator size="large" color={colors.primary} />
                 </View>
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={[styles.container, { paddingTop: insets.top }]}>
+                <ScreenHeader title="Detalhes da Consulta" />
+                <ErrorScreen message={error} onRetry={retry} />
             </View>
         );
     }

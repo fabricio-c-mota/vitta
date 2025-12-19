@@ -24,9 +24,13 @@ export default function MyAppointmentsScreen() {
         router.push(`/appointment/${id}`);
     }
 
+    function handleBack() {
+        router.replace("/patient-home");
+    }
+
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
-            <ScreenHeader title="Minhas Consultas" />
+            <ScreenHeader title="Minhas Consultas" onBack={handleBack} />
 
             {loading && !refreshing ? (
                 <View style={styles.centered}>

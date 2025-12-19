@@ -30,12 +30,12 @@ import User from "@/model/entities/user";
 
 LocaleConfig.locales["pt-br"] = {
   monthNames: [
-    "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-    "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ],
-  monthNamesShort: ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"],
-  dayNames: ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"],
-  dayNamesShort: ["D","S","T","Q","Q","S","S"],
+  monthNamesShort: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
+  dayNames: ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"],
+  dayNamesShort: ["D", "S", "T", "Q", "Q", "S", "S"],
   today: "Hoje",
 };
 LocaleConfig.defaultLocale = "pt-br";
@@ -87,7 +87,7 @@ export default function ScheduleScreen() {
           text: "OK",
           onPress: () => {
             clearSuccess();
-            router.push("/my-appointments");
+            router.replace("/my-appointments");
           },
         },
       ]);
@@ -156,9 +156,13 @@ export default function ScheduleScreen() {
     return Math.floor(usable / columns);
   }, [H_PADDING, GAP]);
 
+  function handleBack() {
+    router.replace("/patient-home");
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScreenHeader title="Agendamento" />
+      <ScreenHeader title="Agendamento" onBack={handleBack} />
 
       {/* Card do calendário (igual ao mock) */}
       <View style={styles.calendarCard}>

@@ -53,11 +53,11 @@ export default function NutritionistHomeScreen() {
     }, [showEmptyState, fadeAnim]);
 
     function handleViewPendingRequests() {
-        console.log("Ver solicitações pendentes");
+        router.push("/pending-requests");
     }
 
     function handleViewAgenda() {
-        console.log("Ver agenda completa");
+        router.push("/agenda");
     }
 
     async function handleLogout() {

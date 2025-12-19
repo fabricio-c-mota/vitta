@@ -28,10 +28,6 @@ export default function PatientHomeScreen() {
         router.push("/my-appointments");
     }
 
-    function handleNotifications() {
-        console.log("Abrir notificações");
-    }
-
     async function handleLogout() {
         try {
             await logout();
@@ -43,7 +39,6 @@ export default function PatientHomeScreen() {
 
     return (
         <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
-            {/* HEADER */}
             <View style={styles.header}>
                 <Image
                     source={require("../../assets/images/image.png")}
@@ -53,9 +48,7 @@ export default function PatientHomeScreen() {
                 <LogoutButton onPress={handleLogout} />
             </View>
 
-            {/* Cards */}
             <View style={styles.cardsWrapper}>
-                {/* Card 1 - Solicitar Nova Consulta */}
                 <HomeCard backgroundColor={colors.primaryLight} onPress={handleScheduleNew}>
                     <View style={styles.cardTopRow}>
                         <View style={styles.iconCircle}>
@@ -75,7 +68,6 @@ export default function PatientHomeScreen() {
                     </TouchableOpacity>
                 </HomeCard>
 
-                {/* Card 2 - Minhas Consultas */}
                 <HomeCard backgroundColor={colors.white} onPress={handleSeeAllAppointments}>
                     <View style={styles.cardTopRow}>
                         <View style={styles.iconCircle}>

@@ -7,15 +7,24 @@ import { colors, fonts, spacing, fontSizes } from "@/view/themes/theme";
 type Props = {
     title: string;
     showBack?: boolean;
+    onBack?: () => void;
     rightElement?: React.ReactNode;
 };
 
-export default function ScreenHeader({ title, showBack = true, rightElement }: Props) {
+export default function ScreenHeader({ title, showBack = true, onBack, rightElement }: Props) {
+    function handleBack() {
+        if (onBack) {
+            onBack();
+        } else {
+            router.back();
+        }
+    }
+
     return (
         <View style={styles.header}>
             {showBack ? (
                 <TouchableOpacity 
-                    onPress={() => router.back()} 
+                    onPress={handleBack} 
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                     <Feather name="chevron-left" size={28} color={colors.text} />
