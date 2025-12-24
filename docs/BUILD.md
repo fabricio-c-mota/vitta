@@ -1,4 +1,15 @@
-# Build iOS - Vitta
+# Build iOS/Android - Vitta
+
+## Aviso sobre app.json e prebuild (sem EAS)
+
+Este projeto possui as pastas nativas (`android/` e `ios/`). Sempre que você alterar campos nativos no
+`app.json` (ex.: `icon`, `splash`, `android`, `ios`, `plugins`, `orientation`, etc.), rode:
+
+```bash
+npx expo prebuild --clean
+```
+
+Isso sincroniza o `app.json` com os projetos nativos. Depois disso, compile normalmente.
 
 ## Pré-requisitos
 
@@ -42,6 +53,45 @@ npx expo run:ios --device
 > - O app não refletir mudanças visuais (ícone, splash, etc.) mesmo após rebuild
 > Isso força o Expo a regenerar os arquivos nativos e garante que as mudanças sejam aplicadas.
 
+---
+
+# Build Android - Vitta
+
+## Pré-requisitos
+
+- **Node.js** ≥ 18
+- **Android Studio** (com SDK instalado)
+- **Java 17**
+
+## Build Rápido
+
+### Primeiro Build (emulador ou dispositivo)
+
+```bash
+npm install
+npx expo run:android
+```
+
+### Build Dia a Dia
+
+```bash
+npx expo run:android
+```
+
+## Tutorial: Rodando no Android Studio
+
+1. Abra o **Android Studio**.
+2. Clique em **Open** e selecione a pasta `android/` do projeto.
+3. Aguarde o **Gradle Sync** terminar.
+4. Conecte um dispositivo via USB (com depuração USB ativa) ou crie um emulador em **Device Manager**.
+5. No topo do Android Studio, selecione o device.
+6. Clique em **Run** (triângulo verde) para compilar e instalar o app.
+
+Se você atualizou `app.json` (ícones, splash, permissões, etc.), rode antes:
+
+```bash
+npx expo prebuild --clean
+```
 
 ## Troubleshooting
 
