@@ -7,10 +7,13 @@ export type HomeState = {
     user: User | null;
     loading: boolean;
     error: string | null;
+    unauthenticatedRedirect: string | null;
+    startupRedirect: string | null;
 };
 
 export type HomeActions = {
     logout: () => Promise<void>;
+    clearError: () => void;
 };
 
 export default function useHomeViewModel(authUseCases: IAuthUseCases): HomeState & HomeActions {
@@ -45,5 +48,26 @@ export default function useHomeViewModel(authUseCases: IAuthUseCases): HomeState
         }
     }, [authUseCases]);
 
-    return { user, loading, error, logout };
+    const clearError = useCallback((): void => {
+        setError(null);
+    }, []);
+
+    const unauthenticatedRedirect = !loading && !user ? "/login" : null;
+    const startupRedirect = !loading
+        ? user
+            ? user.role === "nutritionist"
+                ? "/nutritionist-home"
+                : "/patient-home"
+            : "/login"
+        : null;
+
+    return {
+        user,
+        loading,
+        error,
+        unauthenticatedRedirect,
+        startupRedirect,
+        logout,
+        clearError,
+    };
 }
