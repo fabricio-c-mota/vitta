@@ -1,168 +1,105 @@
-import { useState, useCallback, useEffect } from "react";
-import TimeSlot from "@/model/entities/timeSlot";
-import Appointment from "@/model/entities/appointment";
-import { IGetAvailableTimeSlotsUseCase } from "@/usecase/appointment/getAvailableTimeSlotsUseCase";
-import { IRequestAppointmentUseCase, RequestAppointmentInput } from "@/usecase/appointment/requestAppointmentUseCase";
+import { useState, useCallback } from "react";
+import { IGetAvailableTimeSlotsUseCase } from "@/usecase/appointment/availability/iGetAvailableTimeSlotsUseCase";
+import { IRequestAppointmentUseCase } from "@/usecase/appointment/request/iRequestAppointmentUseCase";
+import { IGetNutritionistUseCase } from "@/usecase/user/iGetNutritionistUseCase";
+import User from "@/model/entities/user";
 import ValidationError from "@/model/errors/validationError";
-import RepositoryError from "@/model/errors/repositoryError";
-
-export interface ScheduleState {
-    selectedDate: Date | null;
-    availableSlots: TimeSlot[];
-    selectedSlot: TimeSlot | null;
-    observations: string;
-    loading: boolean;
-    submitting: boolean;
-    error: string | null;
-    successMessage: string | null;
-    availabilityMap: Map<string, boolean>;
-}
-
-export interface ScheduleActions {
-    selectDate: (date: Date, nutritionistId: string) => Promise<void>;
-    selectSlot: (slot: TimeSlot) => void;
-    setObservations: (text: string) => void;
-    requestAppointment: (patientId: string, nutritionistId: string) => Promise<Appointment | null>;
-    loadMonthAvailability: (year: number, month: number, nutritionistId: string) => Promise<void>;
-    clearError: () => void;
-    clearSuccess: () => void;
-    reset: () => void;
-}
+import useScheduleAvailability from "@/viewmodel/appointment/helpers/useScheduleAvailability";
+import { ScheduleActions, ScheduleState } from "@/viewmodel/appointment/types/scheduleViewModelTypes";
+import useScheduleSubmission from "@/viewmodel/appointment/helpers/useScheduleSubmission";
 
 export default function useScheduleViewModel(
     getAvailableTimeSlotsUseCase: IGetAvailableTimeSlotsUseCase,
-    requestAppointmentUseCase: IRequestAppointmentUseCase
+    requestAppointmentUseCase: IRequestAppointmentUseCase,
+    getNutritionistUseCase?: IGetNutritionistUseCase
 ): ScheduleState & ScheduleActions {
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
-    const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
     const [observations, setObservationsState] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [availabilityMap, setAvailabilityMap] = useState<Map<string, boolean>>(new Map());
+    const [nutritionist, setNutritionist] = useState<User | null>(null);
+    const [nutritionistLoading, setNutritionistLoading] = useState(false);
+    const [nutritionistError, setNutritionistError] = useState<string | null>(null);
+    const [navigationRoute, setNavigationRoute] = useState<string | null>(null);
+    const [navigationMethod, setNavigationMethod] = useState<"replace" | "push">("replace");
 
-    const selectDate = useCallback(async (date: Date, nutritionistId: string): Promise<void> => {
-        setSelectedDate(date);
-        setSelectedSlot(null);
-        setError(null);
-        setLoading(true);
-
-        try {
-            const slots = await getAvailableTimeSlotsUseCase.execute(date, nutritionistId);
-            setAvailableSlots(slots);
-        } catch (err) {
-            if (err instanceof RepositoryError) {
-                setError(err.message);
-            } else {
-                setError('Erro ao carregar horários disponíveis.');
-            }
-            setAvailableSlots([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [getAvailableTimeSlotsUseCase]);
-
-    const selectSlot = useCallback((slot: TimeSlot): void => {
-        setSelectedSlot(slot);
-        setError(null);
-    }, []);
+    const {
+        selectedDate,
+        availableSlots,
+        selectedSlot,
+        loading,
+        availabilityMap,
+        selectDate,
+        selectSlot,
+        loadMonthAvailability,
+        clearSelection,
+    } = useScheduleAvailability(getAvailableTimeSlotsUseCase, setError);
 
     const setObservations = useCallback((text: string): void => {
         setObservationsState(text);
     }, []);
 
-    const requestAppointment = useCallback(async (
-        patientId: string, 
-        nutritionistId: string
-    ): Promise<Appointment | null> => {
-        if (!selectedDate || !selectedSlot) {
-            setError('Selecione uma data e horário para continuar.');
-            return null;
+    const {
+        submitting,
+        successMessage,
+        successRedirect,
+        requestAppointment,
+        submitAppointment,
+        clearSuccess,
+    } = useScheduleSubmission({
+        requestAppointmentUseCase,
+        selectedDate,
+        selectedSlot,
+        observations,
+        nutritionist,
+        nutritionistLoading,
+        onError: setError,
+        onClearSelection: clearSelection,
+        onClearObservations: () => setObservationsState(""),
+        onRefreshDate: selectDate,
+    });
+
+    const loadNutritionist = useCallback(async (): Promise<void> => {
+        if (!getNutritionistUseCase) {
+            return;
         }
 
-        setSubmitting(true);
-        setError(null);
+        setNutritionistLoading(true);
+        setNutritionistError(null);
 
         try {
-            const input: RequestAppointmentInput = {
-                patientId,
-                nutritionistId,
-                date: selectedDate,
-                timeStart: selectedSlot.timeStart,
-                timeEnd: selectedSlot.timeEnd,
-                observations: observations.trim() || undefined,
-            };
-
-            const appointment = await requestAppointmentUseCase.execute(input);
-            
-            setSuccessMessage('Consulta solicitada com sucesso! Aguarde a confirmação da nutricionista.');
-            
-            setSelectedSlot(null);
-            setObservationsState('');
-            
-            if (selectedDate) {
-                const slots = await getAvailableTimeSlotsUseCase.execute(selectedDate, nutritionistId);
-                setAvailableSlots(slots);
-            }
-
-            return appointment;
+            const result = await getNutritionistUseCase.getNutritionist();
+            setNutritionist(result);
         } catch (err) {
             if (err instanceof ValidationError) {
-                setError(err.message);
-            } else if (err instanceof RepositoryError) {
-                setError(err.message);
+                setNutritionistError(err.message);
             } else {
-                setError('Erro ao solicitar consulta. Tente novamente.');
+                setNutritionistError('Erro ao carregar nutricionista.');
             }
-            return null;
         } finally {
-            setSubmitting(false);
+            setNutritionistLoading(false);
         }
-    }, [selectedDate, selectedSlot, observations, requestAppointmentUseCase, getAvailableTimeSlotsUseCase]);
+    }, [getNutritionistUseCase]);
 
-    const loadMonthAvailability = useCallback(async (
-        year: number, 
-        month: number, 
-        nutritionistId: string
-    ): Promise<void> => {
-        const startDate = new Date(year, month - 1, 1, 12, 0, 0);
-        const endDate = new Date(year, month, 0, 12, 0, 0); // Último dia do mês
-
-        try {
-            const slotsMap = await getAvailableTimeSlotsUseCase.executeForRange(
-                startDate, 
-                endDate, 
-                nutritionistId
-            );
-
-            const newAvailabilityMap = new Map<string, boolean>();
-            slotsMap.forEach((slots, dateStr) => {
-                newAvailabilityMap.set(dateStr, slots.length > 0);
-            });
-
-            setAvailabilityMap(newAvailabilityMap);
-        } catch (err) {
-            console.error('Erro ao carregar disponibilidade do mês:', err);
-        }
-    }, [getAvailableTimeSlotsUseCase]);
+    const clearNutritionistError = useCallback((): void => {
+        setNutritionistError(null);
+    }, []);
 
     const clearError = useCallback((): void => {
         setError(null);
     }, []);
 
-    const clearSuccess = useCallback((): void => {
-        setSuccessMessage(null);
+    const confirmSuccessRedirect = useCallback(() => {
+        if (!successRedirect) return;
+        setNavigationMethod("replace");
+        setNavigationRoute(successRedirect);
+    }, [successRedirect]);
+
+    const goBack = useCallback(() => {
+        setNavigationMethod("replace");
+        setNavigationRoute("/patient-home");
     }, []);
 
-    const reset = useCallback((): void => {
-        setSelectedDate(null);
-        setAvailableSlots([]);
-        setSelectedSlot(null);
-        setObservationsState('');
-        setError(null);
-        setSuccessMessage(null);
+    const clearNavigation = useCallback(() => {
+        setNavigationRoute(null);
     }, []);
 
     return {
@@ -174,14 +111,25 @@ export default function useScheduleViewModel(
         submitting,
         error,
         successMessage,
+        successRedirect,
         availabilityMap,
+        nutritionist,
+        nutritionistLoading,
+        nutritionistError,
+        navigationRoute,
+        navigationMethod,
         selectDate,
         selectSlot,
         setObservations,
         requestAppointment,
+        submitAppointment,
         loadMonthAvailability,
+        loadNutritionist,
+        clearNutritionistError,
         clearError,
         clearSuccess,
-        reset,
+        goBack,
+        clearNavigation,
+        confirmSuccessRedirect,
     };
 }
