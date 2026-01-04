@@ -23,4 +23,5 @@ local.properties
 *.tsbuildinfoexpo-env.d.ts
 firestore*
 expo-env.d.ts
+*firebase-adminsdk*.json
 supabase/.temp/
