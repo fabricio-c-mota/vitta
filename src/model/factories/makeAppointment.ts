@@ -1,4 +1,5 @@
 import Appointment, { AppointmentStatus } from "../entities/appointment";
+import { generateId } from "../utils/idUtils";
 
 interface CreateAppointmentInput {
     id?: string;
@@ -8,28 +9,23 @@ interface CreateAppointmentInput {
     timeStart: string;
     timeEnd: string;
     status?: AppointmentStatus;
-    observations?: string;
-}
-
-function generateId(): string {
-    if (typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.randomUUID === 'function') {
-        return globalThis.crypto.randomUUID();
-    }
-    return `appt-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    calendarEventIdPatient?: string;
+    calendarEventIdNutritionist?: string;
 }
 
 export function makeAppointment(input: CreateAppointmentInput): Appointment {
     const now = new Date();
 
     return {
-        id: input.id ?? generateId(),
+        id: input.id ?? generateId('appt'),
         patientId: input.patientId,
         nutritionistId: input.nutritionistId,
         date: input.date,
         timeStart: input.timeStart,
         timeEnd: input.timeEnd,
         status: input.status ?? 'pending',
-        observations: input.observations,
+        calendarEventIdPatient: input.calendarEventIdPatient,
+        calendarEventIdNutritionist: input.calendarEventIdNutritionist,
         createdAt: now,
         updatedAt: now,
     };

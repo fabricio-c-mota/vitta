@@ -1,52 +1,28 @@
 import { useState, useCallback, useEffect } from "react";
 import Appointment from "@/model/entities/appointment";
-import { IAppointmentRepository } from "@/model/repositories/iAppointmentRepository";
-import { IAcceptAppointmentUseCase } from "@/usecase/appointment/acceptAppointmentUseCase";
-import { IRejectAppointmentUseCase } from "@/usecase/appointment/rejectAppointmentUseCase";
-import { IUserRepository } from "@/model/repositories/iUserRepository";
+import { IAcceptAppointmentUseCase } from "@/usecase/appointment/status/iAcceptAppointmentUseCase";
+import { IRejectAppointmentUseCase } from "@/usecase/appointment/status/iRejectAppointmentUseCase";
+import { IListPendingAppointmentsUseCase } from "@/usecase/appointment/list/iListPendingAppointmentsUseCase";
+import { IGetUserByIdUseCase } from "@/usecase/user/iGetUserByIdUseCase";
+import { IAppointmentCalendarSyncUseCase } from "@/usecase/calendar/iAppointmentCalendarSyncUseCase";
+import { IAppointmentPushNotificationUseCase } from "@/usecase/notifications/iAppointmentPushNotificationUseCase";
 import ValidationError from "@/model/errors/validationError";
 import RepositoryError from "@/model/errors/repositoryError";
-
-export interface PendingAppointmentItem {
-    id: string;
-    patientId: string;
-    patientName: string;
-    dateFormatted: string;
-    timeStart: string;
-    timeEnd: string;
-    observations?: string;
-}
-
-export interface PendingRequestsState {
-    pendingAppointments: PendingAppointmentItem[];
-    loading: boolean;
-    processing: boolean;
-    error: string | null;
-    successMessage: string | null;
-}
-
-export interface PendingRequestsActions {
-    acceptAppointment: (appointmentId: string) => Promise<boolean>;
-    rejectAppointment: (appointmentId: string) => Promise<boolean>;
-    clearError: () => void;
-    clearSuccess: () => void;
-}
-
-function formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString("pt-BR", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-    });
-}
+import {
+    PendingAppointmentItem,
+    PendingRequestsActions,
+    PendingRequestsState,
+} from "@/viewmodel/nutritionist/types/pendingRequestsViewModelTypes";
+import { formatPendingDate } from "@/viewmodel/nutritionist/helpers/pendingRequestsViewModelHelpers";
+import usePatientNameCache from "@/viewmodel/nutritionist/usePatientNameCache";
 
 export default function usePendingRequestsViewModel(
-    appointmentRepository: IAppointmentRepository,
+    listPendingAppointmentsUseCase: IListPendingAppointmentsUseCase,
     acceptAppointmentUseCase: IAcceptAppointmentUseCase,
     rejectAppointmentUseCase: IRejectAppointmentUseCase,
-    userRepository: IUserRepository,
+    getUserByIdUseCase: IGetUserByIdUseCase,
+    calendarSyncUseCase: IAppointmentCalendarSyncUseCase,
+    appointmentPushNotificationUseCase: IAppointmentPushNotificationUseCase,
     nutritionistId: string
 ): PendingRequestsState & PendingRequestsActions {
 
@@ -55,22 +31,7 @@ export default function usePendingRequestsViewModel(
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-    const [patientNamesCache, setPatientNamesCache] = useState<Record<string, string>>({});
-
-    const loadPatientName = useCallback(async (patientId: string): Promise<string> => {
-        if (patientNamesCache[patientId]) {
-            return patientNamesCache[patientId];
-        }
-        try {
-            const patient = await userRepository.getUserByID(patientId);
-            const name = patient?.name || "Paciente";
-            setPatientNamesCache(prev => ({ ...prev, [patientId]: name }));
-            return name;
-        } catch {
-            return "Paciente";
-        }
-    }, [userRepository, patientNamesCache]);
+    const { getPatientName } = usePatientNameCache(getUserByIdUseCase);
 
     useEffect(() => {
         if (!nutritionistId) {
@@ -80,20 +41,19 @@ export default function usePendingRequestsViewModel(
 
         setLoading(true);
 
-        const unsubscribe = appointmentRepository.onNutritionistPendingChange(
+        const unsubscribe = listPendingAppointmentsUseCase.subscribePendingByNutritionist(
             nutritionistId,
             async (appointments: Appointment[]) => {
                 const items: PendingAppointmentItem[] = await Promise.all(
                     appointments.map(async (appt) => {
-                        const patientName = await loadPatientName(appt.patientId);
+                        const patientName = await getPatientName(appt.patientId);
                         return {
                             id: appt.id,
                             patientId: appt.patientId,
                             patientName,
-                            dateFormatted: formatDate(appt.date),
+                            dateFormatted: formatPendingDate(appt.date),
                             timeStart: appt.timeStart,
                             timeEnd: appt.timeEnd,
-                            observations: appt.observations,
                         };
                     })
                 );
@@ -105,14 +65,24 @@ export default function usePendingRequestsViewModel(
         return () => {
             unsubscribe();
         };
-    }, [nutritionistId, appointmentRepository, loadPatientName]);
+    }, [nutritionistId, listPendingAppointmentsUseCase, getPatientName]);
 
     const acceptAppointment = useCallback(async (appointmentId: string): Promise<boolean> => {
         setProcessing(true);
         setError(null);
 
         try {
-            await acceptAppointmentUseCase.execute(appointmentId);
+            const appointment = await acceptAppointmentUseCase.acceptAppointment(appointmentId);
+            try {
+                await calendarSyncUseCase.syncAccepted(appointment, "nutritionist");
+            } catch {
+                // Não bloqueia o fluxo se o calendário falhar.
+            }
+            try {
+                await appointmentPushNotificationUseCase.notify(appointment, "accepted", "patient");
+            } catch (error) {
+                console.warn("Falha ao enviar notificacao de aceite:", error);
+            }
             setSuccessMessage('Consulta aceita com sucesso!');
             return true;
         } catch (err) {
@@ -127,14 +97,19 @@ export default function usePendingRequestsViewModel(
         } finally {
             setProcessing(false);
         }
-    }, [acceptAppointmentUseCase]);
+    }, [acceptAppointmentUseCase, appointmentPushNotificationUseCase, calendarSyncUseCase]);
 
     const rejectAppointment = useCallback(async (appointmentId: string): Promise<boolean> => {
         setProcessing(true);
         setError(null);
 
         try {
-            await rejectAppointmentUseCase.execute(appointmentId);
+            const appointment = await rejectAppointmentUseCase.rejectAppointment(appointmentId);
+            try {
+                await appointmentPushNotificationUseCase.notify(appointment, "rejected", "patient");
+            } catch (error) {
+                console.warn("Falha ao enviar notificacao de recusa:", error);
+            }
             setSuccessMessage('Consulta recusada.');
             return true;
         } catch (err) {
@@ -149,7 +124,7 @@ export default function usePendingRequestsViewModel(
         } finally {
             setProcessing(false);
         }
-    }, [rejectAppointmentUseCase]);
+    }, [rejectAppointmentUseCase, appointmentPushNotificationUseCase]);
 
     const clearError = useCallback((): void => {
         setError(null);

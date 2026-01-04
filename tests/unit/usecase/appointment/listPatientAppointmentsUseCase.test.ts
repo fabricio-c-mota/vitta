@@ -1,4 +1,4 @@
-import ListPatientAppointmentsUseCase from '../../../../src/usecase/appointment/listPatientAppointmentsUseCase';
+import ListPatientAppointmentsUseCase from '../../../../src/usecase/appointment/list/listPatientAppointmentsUseCase';
 import { IAppointmentRepository } from '../../../../src/model/repositories/iAppointmentRepository';
 import Appointment from '../../../../src/model/entities/appointment';
 
@@ -27,13 +27,16 @@ const createMockRepository = (appointments: Appointment[] = []): IAppointmentRep
     listByDate: jest.fn(),
     listByStatus: jest.fn(),
     listAcceptedByDateRange: jest.fn(),
+    listAgendaByDateRange: jest.fn(),
     updateStatus: jest.fn(),
+    updateCalendarEventIds: jest.fn(),
     onPatientAppointmentsChange: jest.fn((_, callback) => {
         // Simula chamada inicial com os appointments
         callback(appointments);
         return () => {};
     }),
     onNutritionistPendingChange: jest.fn(() => () => {}),
+    onNutritionistAppointmentsChange: jest.fn(() => () => {}),
 });
 
 describe('ListPatientAppointmentsUseCase', () => {
@@ -48,7 +51,7 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockRepo = createMockRepository(appointments);
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
 
-            const result = await useCase.execute(patientId);
+            const result = await useCase.listByPatient(patientId);
 
             expect(result).toHaveLength(2);
             expect(mockRepo.listByPatient).toHaveBeenCalledWith(patientId);
@@ -58,7 +61,7 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockRepo = createMockRepository([]);
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
 
-            const result = await useCase.execute(patientId);
+            const result = await useCase.listByPatient(patientId);
 
             expect(result).toHaveLength(0);
         });
@@ -74,10 +77,10 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockRepo = createMockRepository(appointments);
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
 
-            const result = await useCase.execute(patientId, { status: 'pending' });
+            const result = await useCase.listByPatient(patientId, { status: 'pending' });
 
             expect(result).toHaveLength(2);
-            result.forEach(appt => expect(appt.status).toBe('pending'));
+            result.forEach((appt: Appointment) => expect(appt.status).toBe('pending'));
         });
 
         it('should filter by accepted status', async () => {
@@ -89,10 +92,10 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockRepo = createMockRepository(appointments);
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
 
-            const result = await useCase.execute(patientId, { status: 'accepted' });
+            const result = await useCase.listByPatient(patientId, { status: 'accepted' });
 
             expect(result).toHaveLength(2);
-            result.forEach(appt => expect(appt.status).toBe('accepted'));
+            result.forEach((appt: Appointment) => expect(appt.status).toBe('accepted'));
         });
 
         it('should filter by rejected status', async () => {
@@ -103,7 +106,7 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockRepo = createMockRepository(appointments);
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
 
-            const result = await useCase.execute(patientId, { status: 'rejected' });
+            const result = await useCase.listByPatient(patientId, { status: 'rejected' });
 
             expect(result).toHaveLength(1);
             expect(result[0].status).toBe('rejected');
@@ -117,7 +120,7 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockRepo = createMockRepository(appointments);
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
 
-            const result = await useCase.execute(patientId, { status: 'cancelled' });
+            const result = await useCase.listByPatient(patientId, { status: 'cancelled' });
 
             expect(result).toHaveLength(1);
             expect(result[0].status).toBe('cancelled');
@@ -142,10 +145,10 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockRepo = createMockRepository(appointments);
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
 
-            const result = await useCase.execute(patientId, { futureOnly: true });
+            const result = await useCase.listByPatient(patientId, { futureOnly: true });
 
             expect(result).toHaveLength(2);
-            result.forEach(appt => {
+            result.forEach((appt: Appointment) => {
                 expect(appt.date >= formatDate(today)).toBe(true);
             });
         });
@@ -166,7 +169,7 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockRepo = createMockRepository(appointments);
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
 
-            const result = await useCase.execute(patientId, { futureOnly: false });
+            const result = await useCase.listByPatient(patientId, { futureOnly: false });
 
             expect(result).toHaveLength(2);
         });
@@ -190,7 +193,7 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockRepo = createMockRepository(appointments);
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
 
-            const result = await useCase.execute(patientId, { 
+            const result = await useCase.listByPatient(patientId, { 
                 status: 'pending', 
                 futureOnly: true 
             });
@@ -206,7 +209,7 @@ describe('ListPatientAppointmentsUseCase', () => {
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
             const callback = jest.fn();
 
-            useCase.subscribe(patientId, callback);
+            useCase.subscribeToPatientAppointments(patientId, callback);
 
             expect(mockRepo.onPatientAppointmentsChange).toHaveBeenCalledWith(
                 patientId,
@@ -218,12 +221,13 @@ describe('ListPatientAppointmentsUseCase', () => {
             const mockUnsubscribe = jest.fn();
             const mockRepo = {
                 ...createMockRepository([]),
+    updateCalendarEventIds: jest.fn(),
                 onPatientAppointmentsChange: jest.fn(() => mockUnsubscribe),
             };
             const useCase = new ListPatientAppointmentsUseCase(mockRepo);
             const callback = jest.fn();
 
-            const unsubscribe = useCase.subscribe(patientId, callback);
+            const unsubscribe = useCase.subscribeToPatientAppointments(patientId, callback);
             unsubscribe();
 
             expect(mockUnsubscribe).toHaveBeenCalled();

@@ -1,14 +1,15 @@
 import User from "@/model/entities/user";
 import { IUserRepository } from "@/model/repositories/iUserRepository";
 import RepositoryError from "@/model/errors/repositoryError";
-import { db } from "../config";
-import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from "firebase/firestore";
+import { getDbInstance } from "../config";
+import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 
 export default class FirebaseUserRepository implements IUserRepository {
     private readonly collectionName = 'users';
 
     async createUser(user: User): Promise<void> {
         try {
+            const db = getDbInstance();
             const userRef = doc(db, this.collectionName, user.id);
             await setDoc(userRef, {
                 name: user.name,
@@ -16,13 +17,14 @@ export default class FirebaseUserRepository implements IUserRepository {
                 role: user.role,
                 createdAt: Timestamp.fromDate(user.createdAt)
             });
-        } catch (Error: any) {
+        } catch {
             throw new RepositoryError('Erro ao criar usuário no Firestore.');
         }
     }
 
     async getUserByID(uID: string): Promise<User | null> {
         try {
+            const db = getDbInstance();
             const userRef = doc(db, this.collectionName, uID);
             const userSnap = await getDoc(userRef);
 
@@ -38,13 +40,14 @@ export default class FirebaseUserRepository implements IUserRepository {
                 role: data.role,
                 createdAt: data.createdAt.toDate()
             };
-        } catch (Error: any) {
+        } catch {
             throw new RepositoryError('Erro ao buscar usuário no Firestore.');
         }
     }
 
     async getByRole(role: 'patient' | 'nutritionist'): Promise<User[]> {
         try {
+            const db = getDbInstance();
             const collectionRef = collection(db, this.collectionName);
             const q = query(collectionRef, where('role', '==', role));
             const snapshot = await getDocs(q);
@@ -62,6 +65,48 @@ export default class FirebaseUserRepository implements IUserRepository {
         } catch (error: any) {
             console.error('getByRole error:', error);
             throw new RepositoryError('Erro ao buscar usuários por role no Firestore.');
+        }
+    }
+
+    async addPushToken(userId: string, token: string): Promise<void> {
+        try {
+            const db = getDbInstance();
+            const userRef = doc(db, this.collectionName, userId);
+            await updateDoc(userRef, {
+                pushTokens: arrayUnion(token),
+            });
+        } catch {
+            throw new RepositoryError('Erro ao salvar token de notificação.');
+        }
+    }
+
+    async removePushToken(userId: string, token: string): Promise<void> {
+        try {
+            const db = getDbInstance();
+            const userRef = doc(db, this.collectionName, userId);
+            await updateDoc(userRef, {
+                pushTokens: arrayRemove(token),
+            });
+        } catch {
+            throw new RepositoryError('Erro ao remover token de notificação.');
+        }
+    }
+
+    async getPushTokens(userId: string): Promise<string[]> {
+        try {
+            const db = getDbInstance();
+            const userRef = doc(db, this.collectionName, userId);
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+                return [];
+            }
+            const data = userSnap.data();
+            if (!Array.isArray(data.pushTokens)) {
+                return [];
+            }
+            return data.pushTokens.filter((token: unknown) => typeof token === "string");
+        } catch {
+            throw new RepositoryError('Erro ao buscar tokens de notificação.');
         }
     }
 }

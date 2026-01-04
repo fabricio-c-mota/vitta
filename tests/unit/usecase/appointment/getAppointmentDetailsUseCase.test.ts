@@ -1,7 +1,8 @@
-import GetAppointmentDetailsUseCase from '../../../../src/usecase/appointment/getAppointmentDetailsUseCase';
+import GetAppointmentDetailsUseCase from '../../../../src/usecase/appointment/details/getAppointmentDetailsUseCase';
 import { IAppointmentRepository } from '../../../../src/model/repositories/iAppointmentRepository';
 import Appointment from '../../../../src/model/entities/appointment';
 import RepositoryError from '../../../../src/model/errors/repositoryError';
+import ValidationError from '../../../../src/model/errors/validationError';
 
 // Helper para criar appointment mock
 const createMockAppointment = (id: string): Appointment => ({
@@ -12,7 +13,6 @@ const createMockAppointment = (id: string): Appointment => ({
     timeStart: '09:00',
     timeEnd: '11:00',
     status: 'pending',
-    observations: 'Primeira consulta',
     createdAt: new Date(),
     updatedAt: new Date(),
 });
@@ -25,19 +25,22 @@ const createMockRepository = (appointment: Appointment | null = null): IAppointm
     listByDate: jest.fn(),
     listByStatus: jest.fn(),
     listAcceptedByDateRange: jest.fn(),
+    listAgendaByDateRange: jest.fn(),
     updateStatus: jest.fn(),
+    updateCalendarEventIds: jest.fn(),
     onPatientAppointmentsChange: jest.fn(() => () => {}),
     onNutritionistPendingChange: jest.fn(() => () => {}),
+    onNutritionistAppointmentsChange: jest.fn(() => () => {}),
 });
 
 describe('GetAppointmentDetailsUseCase', () => {
-    describe('execute - Successful Retrieval', () => {
+    describe('getById - Successful Retrieval', () => {
         it('should return appointment when found', async () => {
             const mockAppointment = createMockAppointment('appt-123');
             const mockRepo = createMockRepository(mockAppointment);
             const useCase = new GetAppointmentDetailsUseCase(mockRepo);
 
-            const result = await useCase.execute('appt-123');
+            const result = await useCase.getById('appt-123');
 
             expect(result).toEqual(mockAppointment);
             expect(mockRepo.getById).toHaveBeenCalledWith('appt-123');
@@ -48,7 +51,7 @@ describe('GetAppointmentDetailsUseCase', () => {
             const mockRepo = createMockRepository(mockAppointment);
             const useCase = new GetAppointmentDetailsUseCase(mockRepo);
 
-            const result = await useCase.execute('appt-123');
+            const result = await useCase.getById('appt-123');
 
             expect(result).toHaveProperty('id');
             expect(result).toHaveProperty('patientId');
@@ -57,47 +60,46 @@ describe('GetAppointmentDetailsUseCase', () => {
             expect(result).toHaveProperty('timeStart');
             expect(result).toHaveProperty('timeEnd');
             expect(result).toHaveProperty('status');
-            expect(result).toHaveProperty('observations');
             expect(result).toHaveProperty('createdAt');
             expect(result).toHaveProperty('updatedAt');
         });
     });
 
-    describe('execute - Not Found', () => {
+    describe('getById - Not Found', () => {
         it('should return null when appointment not found', async () => {
             const mockRepo = createMockRepository(null);
             const useCase = new GetAppointmentDetailsUseCase(mockRepo);
 
-            const result = await useCase.execute('non-existent-id');
+            const result = await useCase.getById('non-existent-id');
 
             expect(result).toBeNull();
         });
     });
 
-    describe('execute - Validation', () => {
-        it('should throw RepositoryError for empty id', async () => {
+    describe('getById - Validation', () => {
+        it('should throw ValidationError for empty id', async () => {
             const mockRepo = createMockRepository(null);
             const useCase = new GetAppointmentDetailsUseCase(mockRepo);
 
-            await expect(useCase.execute('')).rejects.toThrow(RepositoryError);
-            await expect(useCase.execute('')).rejects.toThrow('ID da consulta é obrigatório.');
+            await expect(useCase.getById('')).rejects.toThrow(ValidationError);
+            await expect(useCase.getById('')).rejects.toThrow('ID da consulta é obrigatório.');
         });
 
-        it('should throw RepositoryError for whitespace-only id', async () => {
+        it('should throw ValidationError for whitespace-only id', async () => {
             const mockRepo = createMockRepository(null);
             const useCase = new GetAppointmentDetailsUseCase(mockRepo);
 
-            await expect(useCase.execute('   ')).rejects.toThrow(RepositoryError);
+            await expect(useCase.getById('   ')).rejects.toThrow(ValidationError);
         });
     });
 
-    describe('execute - Different Statuses', () => {
+    describe('getById - Different Statuses', () => {
         it('should return pending appointment', async () => {
             const mockAppointment = { ...createMockAppointment('1'), status: 'pending' as const };
             const mockRepo = createMockRepository(mockAppointment);
             const useCase = new GetAppointmentDetailsUseCase(mockRepo);
 
-            const result = await useCase.execute('1');
+            const result = await useCase.getById('1');
 
             expect(result?.status).toBe('pending');
         });
@@ -107,7 +109,7 @@ describe('GetAppointmentDetailsUseCase', () => {
             const mockRepo = createMockRepository(mockAppointment);
             const useCase = new GetAppointmentDetailsUseCase(mockRepo);
 
-            const result = await useCase.execute('1');
+            const result = await useCase.getById('1');
 
             expect(result?.status).toBe('accepted');
         });
@@ -117,7 +119,7 @@ describe('GetAppointmentDetailsUseCase', () => {
             const mockRepo = createMockRepository(mockAppointment);
             const useCase = new GetAppointmentDetailsUseCase(mockRepo);
 
-            const result = await useCase.execute('1');
+            const result = await useCase.getById('1');
 
             expect(result?.status).toBe('rejected');
         });
@@ -127,7 +129,7 @@ describe('GetAppointmentDetailsUseCase', () => {
             const mockRepo = createMockRepository(mockAppointment);
             const useCase = new GetAppointmentDetailsUseCase(mockRepo);
 
-            const result = await useCase.execute('1');
+            const result = await useCase.getById('1');
 
             expect(result?.status).toBe('cancelled');
         });

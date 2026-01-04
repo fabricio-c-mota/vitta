@@ -1,34 +1,71 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Appointment from "@/model/entities/appointment";
-import { IListPatientAppointmentsUseCase, ListAppointmentsFilter } from "@/usecase/appointment/listPatientAppointmentsUseCase";
+import { IListPatientAppointmentsUseCase } from "@/usecase/appointment/list/iListPatientAppointmentsUseCase";
 import RepositoryError from "@/model/errors/repositoryError";
+import { IAppointmentCalendarSyncUseCase } from "@/usecase/calendar/iAppointmentCalendarSyncUseCase";
 
 export interface MyAppointmentsState {
     appointments: Appointment[];
     loading: boolean;
     refreshing: boolean;
     error: string | null;
-    currentFilter: ListAppointmentsFilter;
+    navigationRoute: string | null;
+    navigationMethod: "replace" | "push";
 }
 
 export interface MyAppointmentsActions {
     loadAppointments: () => Promise<void>;
     refresh: () => Promise<void>;
-    setStatusFilter: (status: 'pending' | 'accepted' | 'rejected' | 'cancelled' | undefined) => void;
-    setFutureOnlyFilter: (futureOnly: boolean) => void;
-    clearFilters: () => void;
     clearError: () => void;
+    openAppointment: (appointmentId: string) => void;
+    goBack: () => void;
+    clearNavigation: () => void;
 }
 
 export default function useMyAppointmentsViewModel(
     listPatientAppointmentsUseCase: IListPatientAppointmentsUseCase,
+    calendarSyncUseCase: IAppointmentCalendarSyncUseCase,
     patientId: string
 ): MyAppointmentsState & MyAppointmentsActions {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [currentFilter, setCurrentFilter] = useState<ListAppointmentsFilter>({});
+    const [navigationRoute, setNavigationRoute] = useState<string | null>(null);
+    const [navigationMethod, setNavigationMethod] = useState<"replace" | "push">("replace");
+    const syncInFlightRef = useRef(new Set<string>());
+
+    const syncAppointmentCalendar = useCallback(async (appointment: Appointment): Promise<void> => {
+        const key = appointment.id;
+        if (syncInFlightRef.current.has(key)) {
+            return;
+        }
+
+        if (appointment.status === "accepted") {
+            if (appointment.calendarEventIdPatient) {
+                return;
+            }
+            syncInFlightRef.current.add(key);
+            try {
+                await calendarSyncUseCase.syncAccepted(appointment, "patient");
+            } finally {
+                syncInFlightRef.current.delete(key);
+            }
+            return;
+        }
+
+        if (appointment.status === "cancelled" || appointment.status === "rejected") {
+            if (!appointment.calendarEventIdPatient) {
+                return;
+            }
+            syncInFlightRef.current.add(key);
+            try {
+                await calendarSyncUseCase.syncCancelledOrRejected(appointment, "patient");
+            } finally {
+                syncInFlightRef.current.delete(key);
+            }
+        }
+    }, [calendarSyncUseCase]);
 
     const loadAppointments = useCallback(async (): Promise<void> => {
         if (!patientId) return;
@@ -36,7 +73,7 @@ export default function useMyAppointmentsViewModel(
         setError(null);
 
         try {
-            const result = await listPatientAppointmentsUseCase.execute(patientId, currentFilter);
+            const result = await listPatientAppointmentsUseCase.listByPatient(patientId);
             setAppointments(result);
         } catch (err) {
             if (err instanceof RepositoryError) {
@@ -48,27 +85,29 @@ export default function useMyAppointmentsViewModel(
             setLoading(false);
             setRefreshing(false);
         }
-    }, [patientId, currentFilter, listPatientAppointmentsUseCase]);
+    }, [patientId, listPatientAppointmentsUseCase]);
 
     const refresh = useCallback(async (): Promise<void> => {
         setRefreshing(true);
         await loadAppointments();
     }, [loadAppointments]);
 
-    const setStatusFilter = useCallback((status: 'pending' | 'accepted' | 'rejected' | 'cancelled' | undefined): void => {
-        setCurrentFilter(prev => ({ ...prev, status }));
-    }, []);
-
-    const setFutureOnlyFilter = useCallback((futureOnly: boolean): void => {
-        setCurrentFilter(prev => ({ ...prev, futureOnly }));
-    }, []);
-
-    const clearFilters = useCallback((): void => {
-        setCurrentFilter({});
-    }, []);
-
     const clearError = useCallback((): void => {
         setError(null);
+    }, []);
+
+    const openAppointment = useCallback((appointmentId: string) => {
+        setNavigationMethod("push");
+        setNavigationRoute(`/appointment/${appointmentId}`);
+    }, []);
+
+    const goBack = useCallback(() => {
+        setNavigationMethod("replace");
+        setNavigationRoute("/patient-home");
+    }, []);
+
+    const clearNavigation = useCallback(() => {
+        setNavigationRoute(null);
     }, []);
 
     useEffect(() => {
@@ -79,35 +118,31 @@ export default function useMyAppointmentsViewModel(
     useEffect(() => {
         if (!patientId) return;
 
-        const unsubscribe = listPatientAppointmentsUseCase.subscribe(patientId, (updatedAppointments) => {
-            let filtered = updatedAppointments;
-
-            if (currentFilter.status) {
-                filtered = filtered.filter(a => a.status === currentFilter.status);
+        const unsubscribe = listPatientAppointmentsUseCase.subscribeToPatientAppointments(
+            patientId,
+            (updatedAppointments) => {
+                setAppointments(updatedAppointments);
+                updatedAppointments.forEach((appointment) => {
+                    void syncAppointmentCalendar(appointment);
+                });
             }
-
-            if (currentFilter.futureOnly) {
-                const today = new Date().toISOString().split('T')[0];
-                filtered = filtered.filter(a => a.date >= today);
-            }
-
-            setAppointments(filtered);
-        });
+        );
 
         return () => unsubscribe();
-    }, [patientId, currentFilter, listPatientAppointmentsUseCase]);
+    }, [patientId, listPatientAppointmentsUseCase, syncAppointmentCalendar]);
 
     return {
         appointments,
         loading,
         refreshing,
         error,
-        currentFilter,
+        navigationRoute,
+        navigationMethod,
         loadAppointments,
         refresh,
-        setStatusFilter,
-        setFutureOnlyFilter,
-        clearFilters,
         clearError,
+        openAppointment,
+        goBack,
+        clearNavigation,
     };
 }

@@ -31,7 +31,7 @@ export default function ConfirmActionModal({
   const isReject = variant === "reject";
 
   const iconName = isReject ? "x" : "check";
-  const accent = isReject ? colors.error : colors.success;
+  const accent = isReject ? colors.error : colors.primary;
 
   const confirmLabel =
     confirmText ?? (isReject ? "Recusar" : "Aceitar");
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: fontSizes.lg + 2,
+    fontSize: fontSizes.lgMd,
     fontFamily: fonts.bold,
     color: colors.text,
     textAlign: "center",

@@ -62,7 +62,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 #### Domínio (Model)
 - [x] Entidade `User` (id, email, name, role: "patient" | "nutritionist", createdAt)
-- [x] Entidade `Appointment` (id, patientId, nutritionistId, date, timeStart, timeEnd, status, observations?, createdAt, updatedAt)
+- [x] Entidade `Appointment` (id, patientId, nutritionistId, date, timeStart, timeEnd, status, createdAt, updatedAt)
 - [x] Factory `makeUser` (name, email, role)
 - [x] Interface `IAuthService` (login, signup, logout, onAuthStateChanged)
 - [x] Interface `IUserRepository` (createUser, getUserByID, getByRole)
@@ -118,12 +118,6 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 - [x] **Usecase/Validator**: authValidator (email/password validation)
 - [x] **Usecase/Auth**: authUseCases (login, signup, logout, onAuthStateChanged com mocks)
 
-**Cobertura:**
-- Statements: 92.42%
-- Branches: 88.57%
-- Functions: 100%
-- Lines: 92.42%
-
 ### Critérios de Aceitação
 
 - [x] Paciente consegue se registrar com nome, email e senha
@@ -157,7 +151,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 #### Domínio (Model)
 - [x] Interface `IAppointmentRepository` (createAppointment, getAppointmentByID, listAppointmentsByPatient, listAppointmentsByNutritionist, listAppointmentsByDate, updateAppointmentStatus)
-- [x] Factory `makeAppointment` (patientId, nutritionistId, date, timeStart, timeEnd, observations?)
+- [x] Factory `makeAppointment` (patientId, nutritionistId, date, timeStart, timeEnd)
 - [x] Factory `makeTimeSlot` (date, timeStart, timeEnd, available)
 - [x] Tipo `AppointmentStatus` (union: pending | accepted | rejected | cancelled)
 
@@ -178,7 +172,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 - [x] `GetAppointmentDetailsUseCase` (buscar por id)
 
 #### ViewModel
-- [x] `useScheduleViewModel` (availableSlots, selectedDate, selectedTime, observations, loading)
+- [x] `useScheduleViewModel` (availableSlots, selectedDate, selectedTime, loading)
 - [x] `useMyAppointmentsViewModel` (appointments list, loading, refresh)
 - [x] `useAppointmentDetailsViewModel` (appointment, loading)
 - [x] Hooks correspondentes para as Views
@@ -200,6 +194,12 @@ As integrações complexas (notificações push e calendário nativo) serão imp
   - [x] Nome da nutricionista
 - [x] Componentes: `AppointmentCard`, `TimePill`, `StatusBadge`, `ScreenHeader`, `EmptyStateCard`, `InfoRow`
 
+##### Themes
+- [x] `theme.ts` (tipografia, cores e espaçamentos aplicados às telas novas)
+
+##### Navegação
+- [x] Rotas de paciente (schedule, minhas consultas, detalhes)
+
 #### Testes
 - [x] Testes: `GetAvailableTimeSlotsUseCase` (fins de semana, slots ocupados)
 - [x] Testes: `RequestAppointmentUseCase` (validações)
@@ -207,14 +207,14 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 ### Critérios de Aceitação
 
-- [x] Paciente vê calendário mensal com dias úteis disponíveis
-- [x] Fins de semana aparecem desabilitados
-- [x] Ao clicar em dia, vê slots: 9-11h, 11-13h, 13-15h, 14-16h
-- [x] Horários ocupados não aparecem na lista
-- [x] Paciente seleciona horário e solicita consulta
-- [x] Consulta criada com status "pending"
-- [x] Paciente vê lista de suas consultas com status colorido
-- [x] Atualização em tempo real (Firebase listeners)
+- Paciente vê calendário mensal com dias úteis disponíveis
+- Fins de semana aparecem desabilitados
+- Ao clicar em dia, vê slots: 9-11h, 11-13h, 13-15h, 14-16h
+- Horários ocupados não aparecem na lista
+- Paciente seleciona horário e solicita consulta
+- Consulta criada com status "pending"
+- Paciente vê lista de suas consultas com status colorido
+- Atualização em tempo real (Firebase listeners)
 
 ### Notas Técnicas
 - [x] Usar `react-native-calendars` para calendário
@@ -230,53 +230,62 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 ### Histórias de Usuário Relacionadas
 
-- [ ] [N01](./HUN.md) - Nutricionista: Visualizar solicitações de consulta pendentes
-- [ ] [N02](./HUN.md) - Nutricionista: Aceitar solicitação de consulta
-- [ ] [N03](./HUN.md) - Nutricionista: Recusar solicitação de consulta
-- [ ] [N04](./HUN.md) - Nutricionista: Visualizar agenda de consultas confirmadas
-- [ ] [S01](./HUS.md) - Sistema: Evitar conflito de horários
-- [ ] [S02](./HUS.md) - Sistema: Atualizar status em tempo real
+- [x] [N01](./HUN.md) - Nutricionista: Visualizar solicitações de consulta pendentes
+- [x] [N02](./HUN.md) - Nutricionista: Aceitar solicitação de consulta
+- [x] [N03](./HUN.md) - Nutricionista: Recusar solicitação de consulta
+- [x] [N04](./HUN.md) - Nutricionista: Visualizar agenda de consultas confirmadas
+- [x] [S01](./HUS.md) - Sistema: Evitar conflito de horários
+- [x] [S02](./HUS.md) - Sistema: Atualizar status em tempo real
 
 ### Entregas
 
 #### Casos de Uso
-- [ ] `ListPendingAppointmentsUseCase` (filtrar status, ordenar por data)
-- [ ] `AcceptAppointmentUseCase` (validar conflito + atualizar status)
-- [ ] `RejectAppointmentUseCase` (atualizar status para "rejected")
-- [ ] `ListNutritionistAgendaUseCase` (filtrar status "accepted", agrupar por data)
-- [ ] `CheckAppointmentConflictUseCase` (verificar mesmo horário/data)
+- [x] `ListPendingAppointmentsUseCase` (filtrar status, ordenar por data)
+- [x] `AcceptAppointmentUseCase` (validar conflito + atualizar status)
+- [x] `RejectAppointmentUseCase` (atualizar status para "rejected")
+- [x] `ListNutritionistAgendaUseCase` (filtrar status "accepted", agrupar por data)
+- [x] `CheckAppointmentConflictUseCase` (verificar mesmo horário/data)
 
 #### ViewModel
-- [ ] `PendingRequestsViewModel` (pendingList, accept, reject, loading)
-- [ ] `NutritionistAgendaViewModel` (appointments, selectedDate, filter)
-- [ ] `NutritionistAppointmentDetailsViewModel` (appointment, actions)
-- [ ] Hooks correspondentes para as Views
+- [x] `PendingRequestsViewModel` (pendingList, accept, reject, loading)
+- [x] `NutritionistAgendaViewModel` (appointments, selectedDate, filter)
+- [x] `NutritionistAppointmentDetailsViewModel` (appointment, actions)
+- [x] Hooks correspondentes para as Views
 
 #### View
-- [ ] Tela: `PendingRequestsScreen.tsx`
+- [x] Tela: `PendingRequestsScreen.tsx`
   - Lista de solicitações pendentes
   - Botões inline: Aceitar (verde) / Recusar (vermelho)
   - Pull-to-refresh
   - Atualização em tempo real
-- [ ] Tela: `AgendaScreen.tsx`
+- [x] Tela: `AgendaScreen.tsx`
   - Calendário com consultas aceitas
   - Dias com consulta marcados (verde)
   - Lista de consultas do dia selecionado
   - Filtros: Todos, Esta Semana, Hoje
-- [ ] Tela: `NutritionistAppointmentDetailsScreen.tsx`
+- [x] Tela: `NutritionistAppointmentDetailsScreen.tsx`
   - Detalhes completos
   - Ações: Aceitar, Recusar (se pendente)
   - Aviso de conflito de horário
 
+##### Components
+- [x] `ConfirmActionModal`, `AlertModal`, `AppointmentCard`, `EmptyStateCard`
+
+##### Themes
+- [x] `theme.ts` (aplicado às telas e cards da nutricionista)
+
+##### Navegação
+- [x] Rotas de nutricionista (pendências, agenda, detalhes)
+
 #### Regras de Negócio
-- [ ] Validação: não permitir 2 consultas aceitas no mesmo dia/horário
-- [ ] Alert/modal quando houver conflito
-- [ ] Atualização de status notifica paciente via Firebase (listeners)
+- [x] Validação: não permitir 2 consultas aceitas no mesmo dia/horário
+- [x] Alert/modal quando houver conflito
+- [x] Atualização de status notifica paciente via Firebase (listeners)
 
 #### Testes
-- [ ] Testes: `AcceptAppointmentUseCase` (conflito de horário)
-- [ ] Testes: `CheckAppointmentConflictUseCase`
-- [ ] Testes: ViewModels
+- [x] Testes: `AcceptAppointmentUseCase` (conflito de horário)
+- [x] Testes: `CheckAppointmentConflictUseCase`
+- [x] Testes: ViewModels
 
 ### Critérios de Aceitação
 
@@ -303,52 +312,58 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 ### Histórias de Usuário Relacionadas
 
-- [ ] [P08](./HUP.md) - Paciente: Cancelar consulta aceita
-- [ ] [N06](./HUN.md) - Nutricionista: Cancelar consulta já aceita
-- [ ] [N07](./HUN.md) - Nutricionista: Reativar consulta cancelada
+- [x] [P08](./HUP.md) - Paciente: Cancelar consulta aceita
+- [x] [N06](./HUN.md) - Nutricionista: Cancelar consulta já aceita
+- [x] [N07](./HUN.md) - Nutricionista: Reativar consulta cancelada
 
 ### Entregas
 
 #### Casos de Uso
-- [ ] `CancelAppointmentUseCase` (paciente ou nutricionista)
+- [x] `CancelAppointmentUseCase` (paciente ou nutricionista)
   - Validar que consulta está "accepted" ou "pending"
   - Atualizar status para "cancelled"
-- [ ] `ReactivateAppointmentUseCase` (nutricionista apenas)
+- [x] `ReactivateAppointmentUseCase` (nutricionista apenas)
   - Validar que consulta está "cancelled"
   - Verificar conflito de horário
   - Atualizar status para "accepted"
 
 #### View - Melhorias
-- [ ] Botão "Cancelar Consulta" em `AppointmentDetailsScreen` (paciente)
+- [x] Botão "Cancelar Consulta" em `AppointmentDetailsScreen` (paciente)
   - Apenas para status: pending ou accepted
   - Modal de confirmação
-- [ ] Botão "Cancelar Consulta" em `NutritionistAppointmentDetailsScreen` (nutricionista)
+- [x] Botão "Cancelar Consulta" em `NutritionistAppointmentDetailsScreen` (nutricionista)
   - Apenas para status: accepted
   - Modal de confirmação
-- [ ] Botão "Aceitar Novamente" em `NutritionistAppointmentDetailsScreen`
+- [x] Botão "Aceitar Novamente" em `NutritionistAppointmentDetailsScreen`
   - Apenas para status: cancelled
   - Verificar conflito antes de aceitar
-- [ ] Pull-to-refresh em TODAS as listas
-- [ ] Estados de loading em todas as telas
-- [ ] Tratamento de erro com mensagens amigáveis
-- [ ] Feedback visual (toasts/alerts) para sucesso/erro
+- [x] Pull-to-refresh em TODAS as listas
+- [x] Estados de loading em todas as telas
+- [x] Tratamento de erro com mensagens amigáveis
+- [x] Feedback visual (toasts/alerts) para sucesso/erro
+
+##### Components
+- [x] Modais de confirmação e alerta reutilizados nas telas
+
+##### Navegação
+- [x] Rotas de detalhes e retorno para listas após ações
 
 #### Componentes Reutilizáveis
-- [ ] `ConfirmationModal` (título, mensagem, ações)
-- [ ] `ErrorMessage` (mensagem + retry)
-- [ ] `EmptyState` (mensagem quando lista vazia)
-- [ ] `LoadingIndicator` (spinner centralizado)
+- [x] `ConfirmationModal` (título, mensagem, ações)
+- [x] `ErrorMessage` (mensagem + retry)
+- [x] `EmptyState` (mensagem quando lista vazia)
+- [x] `LoadingIndicator` (spinner centralizado)
 
 #### Validações
-- [ ] Validar formulário de registro (email, senha, nome)
-- [ ] Validar seleção de horário antes de solicitar
-- [ ] Sanitizar inputs
+- [x] Validar formulário de registro (email, senha, nome)
+- [x] Validar seleção de horário antes de solicitar
+- [x] Sanitizar inputs
 
 #### Testes
-- [ ] Testes: `CancelAppointmentUseCase`
-- [ ] Testes: `ReactivateAppointmentUseCase`
-- [ ] Testes de integração: fluxo completo paciente
-- [ ] Testes de integração: fluxo completo nutricionista
+- [x] Testes: `CancelAppointmentUseCase`
+- [x] Testes: `ReactivateAppointmentUseCase`
+- [x] Testes de integração: fluxo completo paciente
+- [x] Testes de integração: fluxo completo nutricionista
 
 ### Critérios de Aceitação
 
@@ -364,7 +379,6 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 ### Notas Técnicas
 
-- Usar biblioteca de toast/snackbar (ex: `react-native-toast-message`)
 - Implementar debounce em ações críticas
 - Garantir que listeners do Firebase sejam limpos (cleanup)
 
@@ -408,6 +422,15 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 - [ ] `AcceptAppointmentUseCase` → chamar `calendarProvider.addEvent()`
 - [ ] `CancelAppointmentUseCase` → chamar `notificationProvider.cancelReminder()`
 - [ ] `CancelAppointmentUseCase` → chamar `calendarProvider.removeEvent()`
+
+#### View
+- [ ] Ajustes de UX para permissão de notificações/calendário (mensagens e erros)
+
+#### Components
+- [ ] Componentes de aviso/erro para permissões negadas
+
+#### Navegação
+- [ ] Fluxo de fallback caso permissões sejam recusadas
 
 #### DI Container
 - [ ] Registrar `StubNotificationProvider` como implementação de `INotificationProvider`
@@ -457,6 +480,12 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 - [ ] Validar acessibilidade básica (tamanhos de fonte, contraste)
 - [ ] Melhorar animações de transição
 - [ ] Testar em diferentes tamanhos de tela (iOS/Android)
+
+#### Components
+- [ ] Revisar componentes compartilhados (estado vazio, cards, modais)
+
+#### Navegação
+- [ ] Validar rota inicial e redirecionamentos em todos os fluxos
 
 #### Testes
 - [ ] Testes de integração: fluxo completo paciente

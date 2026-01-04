@@ -9,7 +9,7 @@ import {
 
 jest.mock('firebase/auth');
 jest.mock('@/infra/firebase/config', () => ({
-    auth: {},
+    getAuthInstance: jest.fn(() => ({})),
 }));
 
 const mockSignIn = signInWithEmailAndPassword as jest.Mock;
@@ -62,6 +62,14 @@ describe('FirebaseAuthService', () => {
             await expect(service.login('test@email.com', 'wrong')).rejects.toThrow(AuthError);
             await expect(service.login('test@email.com', 'wrong')).rejects.toThrow('Credenciais inválidas.');
         });
+
+        it('deve informar email não cadastrado quando usuário não existe', async () => {
+            const error = Object.assign(new Error('User not found'), { code: 'auth/user-not-found' });
+            mockSignIn.mockRejectedValue(error);
+
+            await expect(service.login('naoexiste@email.com', 'senha')).rejects.toThrow(AuthError);
+            await expect(service.login('naoexiste@email.com', 'senha')).rejects.toThrow('Email não cadastrado.');
+        });
     });
 
     describe('signup', () => {
@@ -100,7 +108,7 @@ describe('FirebaseAuthService', () => {
 
             await expect(service.signup('existing@email.com', 'password')).rejects.toThrow(AuthError);
             await expect(service.signup('existing@email.com', 'password')).rejects.toThrow(
-                'Essa conta já existe ou alguma das credenciais está incorreta.'
+                'Essa conta já existe.'
             );
         });
     });

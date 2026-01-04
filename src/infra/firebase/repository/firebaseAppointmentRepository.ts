@@ -1,7 +1,7 @@
 import Appointment, { AppointmentStatus } from "@/model/entities/appointment";
 import { IAppointmentRepository } from "@/model/repositories/iAppointmentRepository";
 import RepositoryError from "@/model/errors/repositoryError";
-import { db } from "../config";
+import { getDbInstance } from "../config";
 import {
     doc,
     getDoc,
@@ -29,7 +29,8 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
             timeStart: data.timeStart as string,
             timeEnd: data.timeEnd as string,
             status: data.status as AppointmentStatus,
-            observations: data.observations as string | undefined,
+            calendarEventIdPatient: data.calendarEventIdPatient as string | undefined,
+            calendarEventIdNutritionist: data.calendarEventIdNutritionist as string | undefined,
             createdAt: (data.createdAt as Timestamp).toDate(),
             updatedAt: (data.updatedAt as Timestamp).toDate(),
         };
@@ -47,8 +48,11 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
             updatedAt: Timestamp.fromDate(appointment.updatedAt),
         };
 
-        if (appointment.observations !== undefined) {
-            data.observations = appointment.observations;
+        if (appointment.calendarEventIdPatient !== undefined) {
+            data.calendarEventIdPatient = appointment.calendarEventIdPatient;
+        }
+        if (appointment.calendarEventIdNutritionist !== undefined) {
+            data.calendarEventIdNutritionist = appointment.calendarEventIdNutritionist;
         }
 
         return data;
@@ -56,15 +60,17 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
 
     async create(appointment: Appointment): Promise<void> {
         try {
+            const db = getDbInstance();
             const docRef = doc(db, this.collectionName, appointment.id);
             await setDoc(docRef, this.toFirestore(appointment));
-        } catch (error) {
+        } catch {
             throw new RepositoryError('Erro ao criar agendamento no Firestore.');
         }
     }
 
     async getById(id: string): Promise<Appointment | null> {
         try {
+            const db = getDbInstance();
             const docRef = doc(db, this.collectionName, id);
             const docSnap = await getDoc(docRef);
 
@@ -73,13 +79,14 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
             }
 
             return this.toAppointment(docSnap.id, docSnap.data());
-        } catch (error) {
+        } catch {
             throw new RepositoryError('Erro ao buscar agendamento no Firestore.');
         }
     }
 
     async listByPatient(patientId: string): Promise<Appointment[]> {
         try {
+            const db = getDbInstance();
             const collectionRef = collection(db, this.collectionName);
             const q = query(
                 collectionRef,
@@ -90,13 +97,14 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
 
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => this.toAppointment(doc.id, doc.data()));
-        } catch (error) {
+        } catch {
             throw new RepositoryError('Erro ao listar agendamentos do paciente.');
         }
     }
 
     async listByDate(date: string, nutritionistId?: string): Promise<Appointment[]> {
         try {
+            const db = getDbInstance();
             const collectionRef = collection(db, this.collectionName);
             const constraints: QueryConstraint[] = [
                 where('date', '==', date),
@@ -110,13 +118,14 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
             const q = query(collectionRef, ...constraints);
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => this.toAppointment(doc.id, doc.data()));
-        } catch (error) {
+        } catch {
             throw new RepositoryError('Erro ao listar agendamentos por data.');
         }
     }
 
     async listByStatus(status: AppointmentStatus, nutritionistId?: string): Promise<Appointment[]> {
         try {
+            const db = getDbInstance();
             const collectionRef = collection(db, this.collectionName);
             const constraints: QueryConstraint[] = [
                 where('status', '==', status),
@@ -131,7 +140,7 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
             const q = query(collectionRef, ...constraints);
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => this.toAppointment(doc.id, doc.data()));
-        } catch (error) {
+        } catch {
             throw new RepositoryError('Erro ao listar agendamentos por status.');
         }
     }
@@ -142,6 +151,7 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
         nutritionistId: string
     ): Promise<Appointment[]> {
         try {
+            const db = getDbInstance();
             const collectionRef = collection(db, this.collectionName);
             const q = query(
                 collectionRef,
@@ -155,27 +165,84 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
 
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => this.toAppointment(doc.id, doc.data()));
-        } catch (error) {
+        } catch {
             throw new RepositoryError('Erro ao listar agendamentos aceitos por período.');
+        }
+    }
+
+    async listAgendaByDateRange(
+        startDate: string,
+        endDate: string,
+        nutritionistId: string
+    ): Promise<Appointment[]> {
+        try {
+            const db = getDbInstance();
+            const collectionRef = collection(db, this.collectionName);
+            const q = query(
+                collectionRef,
+                where('nutritionistId', '==', nutritionistId),
+                where('status', 'in', ['accepted', 'cancelled']),
+                where('date', '>=', startDate),
+                where('date', '<=', endDate),
+                orderBy('date', 'asc'),
+                orderBy('timeStart', 'asc')
+            );
+
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => this.toAppointment(doc.id, doc.data()));
+        } catch {
+            throw new RepositoryError('Erro ao listar agenda por período.');
         }
     }
 
     async updateStatus(id: string, status: AppointmentStatus): Promise<void> {
         try {
+            const db = getDbInstance();
             const docRef = doc(db, this.collectionName, id);
             await updateDoc(docRef, {
                 status,
                 updatedAt: Timestamp.now()
             });
-        } catch (error) {
+        } catch {
             throw new RepositoryError('Erro ao atualizar status do agendamento.');
         }
     }
+
+    async updateCalendarEventIds(
+        id: string,
+        data: {
+            calendarEventIdPatient?: string | null;
+            calendarEventIdNutritionist?: string | null;
+        }
+    ): Promise<void> {
+        try {
+            const db = getDbInstance();
+            const docRef = doc(db, this.collectionName, id);
+            const payload: Record<string, unknown> = {};
+
+            if ("calendarEventIdPatient" in data) {
+                payload.calendarEventIdPatient = data.calendarEventIdPatient ?? null;
+            }
+            if ("calendarEventIdNutritionist" in data) {
+                payload.calendarEventIdNutritionist = data.calendarEventIdNutritionist ?? null;
+            }
+
+            if (Object.keys(payload).length === 0) {
+                return;
+            }
+
+            await updateDoc(docRef, payload);
+        } catch {
+            throw new RepositoryError('Erro ao atualizar evento de calendário.');
+        }
+    }
+
 
     onPatientAppointmentsChange(
         patientId: string,
         callback: (appointments: Appointment[]) => void
     ): () => void {
+        const db = getDbInstance();
         const collectionRef = collection(db, this.collectionName);
         const q = query(
             collectionRef,
@@ -204,6 +271,7 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
         nutritionistId: string,
         callback: (appointments: Appointment[]) => void
     ): () => void {
+        const db = getDbInstance();
         const collectionRef = collection(db, this.collectionName);
         const q = query(
             collectionRef,
@@ -223,6 +291,35 @@ export default class FirebaseAppointmentRepository implements IAppointmentReposi
             },
             (error) => {
                 console.error('Erro ao escutar solicitações pendentes:', error);
+            }
+        );
+
+        return unsubscribe;
+    }
+
+    onNutritionistAppointmentsChange(
+        nutritionistId: string,
+        callback: (appointments: Appointment[]) => void
+    ): () => void {
+        const db = getDbInstance();
+        const collectionRef = collection(db, this.collectionName);
+        const q = query(
+            collectionRef,
+            where('nutritionistId', '==', nutritionistId),
+            orderBy('date', 'asc'),
+            orderBy('timeStart', 'asc')
+        );
+
+        const unsubscribe = onSnapshot(
+            q,
+            (snapshot) => {
+                const appointments = snapshot.docs.map(doc =>
+                    this.toAppointment(doc.id, doc.data())
+                );
+                callback(appointments);
+            },
+            (error) => {
+                console.error('Erro ao escutar agenda da nutricionista:', error);
             }
         );
 

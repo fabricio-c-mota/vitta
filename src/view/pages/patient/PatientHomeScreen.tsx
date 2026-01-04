@@ -1,41 +1,42 @@
-import React from "react";
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    Image
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { colors, fonts, spacing, fontSizes, borderRadius } from "@/view/themes/theme";
-import { authUseCases } from "@/di/container";
-import useHomeViewModel from "@/viewmodel/auth/useHomeViewModel";
+import { colors, fontSizes, fonts, spacing, borderRadius } from "@/view/themes/theme";
+import { useAuthHomeViewModel, usePatientHomeViewModel, usePatientCalendarSyncViewModel } from "@/di/container";
 import LogoutButton from "@/view/components/LogoutButton";
-import { router } from "expo-router";
-import { Alert } from "react-native";
 import HomeCard from "@/view/components/HomeCard";
+import AlertModal from "@/view/components/AlertModal";
+import ConfirmActionModal from "@/view/components/ConfirmActionModal";
+import useRedirectEffect from "@/view/hooks/useRedirectEffect";
+import { router } from "expo-router";
 
 export default function PatientHomeScreen() {
     const insets = useSafeAreaInsets();
-    const { user, logout } = useHomeViewModel(authUseCases);
-
-    function handleScheduleNew() {
-        router.push("/schedule");
-    }
-
-    function handleSeeAllAppointments() {
-        router.push("/my-appointments");
-    }
+    const { user, error, logout, clearError, unauthenticatedRedirect, calendarPermissionRedirect } = useAuthHomeViewModel();
+    const [logoutErrorOpen, setLogoutErrorOpen] = useState(false);
+    const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+    const { navigationRoute, navigationMethod, goToSchedule, goToAppointments, clearNavigation } = usePatientHomeViewModel();
+    usePatientCalendarSyncViewModel(user?.id ?? "");
 
     async function handleLogout() {
-        try {
-            await logout();
-            router.replace("/login");
-        } catch (error) {
-            Alert.alert("Erro", "Não foi possível sair. Tente novamente.");
-        }
+        setLogoutConfirmOpen(true);
     }
+
+    async function confirmLogout() {
+        setLogoutConfirmOpen(false);
+        await logout();
+        router.replace("/login");
+    }
+
+    useRedirectEffect(unauthenticatedRedirect);
+    useRedirectEffect(calendarPermissionRedirect);
+    useRedirectEffect(navigationRoute, { method: navigationMethod, onComplete: clearNavigation });
+
+    useEffect(() => {
+        if (!error) return;
+        setLogoutErrorOpen(true);
+    }, [error]);
 
     return (
         <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
@@ -49,7 +50,7 @@ export default function PatientHomeScreen() {
             </View>
 
             <View style={styles.cardsWrapper}>
-                <HomeCard backgroundColor={colors.primaryLight} onPress={handleScheduleNew}>
+                <HomeCard backgroundColor={colors.primaryLight} onPress={goToSchedule}>
                     <View style={styles.cardTopRow}>
                         <View style={styles.iconCircle}>
                             <Feather name="plus" size={22} color={colors.primary} />
@@ -63,12 +64,12 @@ export default function PatientHomeScreen() {
                         </View>
                     </View>
 
-                    <TouchableOpacity style={styles.primaryButton} onPress={handleScheduleNew}>
+                    <TouchableOpacity style={styles.primaryButton} onPress={goToSchedule}>
                         <Text style={styles.primaryButtonText}>Agendar agora</Text>
                     </TouchableOpacity>
                 </HomeCard>
 
-                <HomeCard backgroundColor={colors.white} onPress={handleSeeAllAppointments}>
+                <HomeCard backgroundColor={colors.white} onPress={goToAppointments}>
                     <View style={styles.cardTopRow}>
                         <View style={styles.iconCircle}>
                             <Feather name="calendar" size={22} color={colors.primary} />
@@ -82,11 +83,30 @@ export default function PatientHomeScreen() {
                         </View>
                     </View>
 
-                    <TouchableOpacity style={styles.secondaryButton} onPress={handleSeeAllAppointments}>
+                    <TouchableOpacity style={styles.secondaryButton} onPress={goToAppointments}>
                         <Text style={styles.secondaryButtonText}>Ver todas</Text>
                     </TouchableOpacity>
                 </HomeCard>
             </View>
+            <AlertModal
+                visible={logoutErrorOpen}
+                variant="error"
+                title="Erro"
+                message="Não foi possível sair. Tente novamente."
+                onConfirm={() => {
+                    setLogoutErrorOpen(false);
+                    clearError();
+                }}
+            />
+            <ConfirmActionModal
+                visible={logoutConfirmOpen}
+                variant="reject"
+                title="Confirmar logout"
+                subtitle="Tem certeza que deseja sair da sua conta?"
+                confirmText="Sair"
+                onConfirm={confirmLogout}
+                onClose={() => setLogoutConfirmOpen(false)}
+            />
         </View>
     );
 }
@@ -144,7 +164,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xs,
     },
     cardSubtitle: {
-        fontSize: fontSizes.sm,
+        fontSize: fontSizes.smMd,
         fontFamily: fonts.regular,
         color: colors.textSecondary,
         lineHeight: 20,

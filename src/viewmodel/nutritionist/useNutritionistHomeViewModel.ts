@@ -1,39 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import Appointment from "@/model/entities/appointment";
-import User from "@/model/entities/user";
-import { IAppointmentRepository } from "@/model/repositories/iAppointmentRepository";
-import { IUserRepository } from "@/model/repositories/iUserRepository";
+import { IListPendingAppointmentsUseCase } from "@/usecase/appointment/list/iListPendingAppointmentsUseCase";
+import { IListNutritionistAgendaUseCase } from "@/usecase/appointment/list/iListNutritionistAgendaUseCase";
+import { IGetUserByIdUseCase } from "@/usecase/user/iGetUserByIdUseCase";
 import RepositoryError from "@/model/errors/repositoryError";
-
-export interface AgendaItem {
-    id: string;
-    patientName: string;
-    time: string;
-}
-
-export interface NutritionistHomeState {
-    todayAppointments: AgendaItem[];
-    pendingCount: number;
-    loading: boolean;
-    error: string | null;
-    showEmptyState: boolean;
-    hasAppointmentsToday: boolean;
-}
-
-export interface NutritionistHomeActions {
-    refresh: () => Promise<void>;
-    clearError: () => void;
-    dismissEmptyState: () => void;
-}
-
-function getTodayISO(): string {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
+import { AgendaItem, NutritionistHomeActions, NutritionistHomeState } from "@/viewmodel/nutritionist/types/nutritionistHomeViewModelTypes";
 
 export default function useNutritionistHomeViewModel(
-    appointmentRepository: IAppointmentRepository,
-    userRepository: IUserRepository,
+    listPendingAppointmentsUseCase: IListPendingAppointmentsUseCase,
+    listNutritionistAgendaUseCase: IListNutritionistAgendaUseCase,
+    getUserByIdUseCase: IGetUserByIdUseCase,
     nutritionistId: string
 ): NutritionistHomeState & NutritionistHomeActions {
     const [todayAppointments, setTodayAppointments] = useState<AgendaItem[]>([]);
@@ -41,6 +16,8 @@ export default function useNutritionistHomeViewModel(
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showEmptyState, setShowEmptyState] = useState(true);
+    const [navigationRoute, setNavigationRoute] = useState<string | null>(null);
+    const [navigationMethod, setNavigationMethod] = useState<"replace" | "push">("replace");
 
     const hasAppointmentsToday = todayAppointments.length > 0;
 
@@ -51,18 +28,21 @@ export default function useNutritionistHomeViewModel(
         setError(null);
 
         try {
-            const pending = await appointmentRepository.listByStatus('pending', nutritionistId);
+            const pending = await listPendingAppointmentsUseCase.listPendingByNutritionist(nutritionistId);
             setPendingCount(pending.length);
 
-            const today = getTodayISO();
-            const todayAll = await appointmentRepository.listByDate(today, nutritionistId);
-            const accepted = todayAll.filter(a => a.status === 'accepted');
+            const todayDate = new Date();
+            todayDate.setHours(12, 0, 0, 0);
+            const accepted = await listNutritionistAgendaUseCase.listAcceptedByDate(
+                nutritionistId,
+                todayDate
+            );
 
             const items: AgendaItem[] = await Promise.all(
                 accepted.map(async (appt) => {
                     let patientName = "Paciente";
                     try {
-                        const patient = await userRepository.getUserByID(appt.patientId);
+                        const patient = await getUserByIdUseCase.getById(appt.patientId);
                         if (patient) patientName = patient.name;
                     } catch {
                     }
@@ -85,7 +65,7 @@ export default function useNutritionistHomeViewModel(
         } finally {
             setLoading(false);
         }
-    }, [appointmentRepository, userRepository, nutritionistId]);
+    }, [listPendingAppointmentsUseCase, listNutritionistAgendaUseCase, getUserByIdUseCase, nutritionistId]);
 
     useEffect(() => {
         loadData();
@@ -94,7 +74,7 @@ export default function useNutritionistHomeViewModel(
     useEffect(() => {
         if (!nutritionistId) return;
 
-        const unsubscribe = appointmentRepository.onNutritionistPendingChange(
+        const unsubscribe = listPendingAppointmentsUseCase.subscribePendingByNutritionist(
             nutritionistId,
             (pending) => {
                 setPendingCount(pending.length);
@@ -102,7 +82,7 @@ export default function useNutritionistHomeViewModel(
         );
 
         return unsubscribe;
-    }, [appointmentRepository, nutritionistId]);
+    }, [listPendingAppointmentsUseCase, nutritionistId]);
 
     const refresh = useCallback(async (): Promise<void> => {
         await loadData();
@@ -112,8 +92,18 @@ export default function useNutritionistHomeViewModel(
         setError(null);
     }, []);
 
-    const dismissEmptyState = useCallback((): void => {
-        setShowEmptyState(false);
+    const goToPendingRequests = useCallback(() => {
+        setNavigationMethod("push");
+        setNavigationRoute("/pending-requests");
+    }, []);
+
+    const goToAgenda = useCallback(() => {
+        setNavigationMethod("push");
+        setNavigationRoute("/agenda");
+    }, []);
+
+    const clearNavigation = useCallback(() => {
+        setNavigationRoute(null);
     }, []);
 
     useEffect(() => {
@@ -136,8 +126,12 @@ export default function useNutritionistHomeViewModel(
         error,
         showEmptyState,
         hasAppointmentsToday,
+        navigationRoute,
+        navigationMethod,
         refresh,
         clearError,
-        dismissEmptyState,
+        goToPendingRequests,
+        goToAgenda,
+        clearNavigation,
     };
 }
