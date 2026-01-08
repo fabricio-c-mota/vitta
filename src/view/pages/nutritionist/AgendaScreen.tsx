@@ -112,7 +112,7 @@ export default function AgendaScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: colors.surface,
     },
     centered: {
         flex: 1,

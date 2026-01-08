@@ -109,9 +109,18 @@ export default class RequestAppointmentUseCase implements IRequestAppointmentUse
         timeEnd: string
     ): Promise<boolean> {
         const patientAppointments = await this.appointmentRepository.listByPatient(patientId);
+        const normalizeDate = (value: string): string =>
+            new Date(value).toISOString().split('T')[0];
+
+        const targetDate = normalizeDate(date);
 
         return patientAppointments.some(appt => {
-            if (appt.date !== date || appt.timeStart !== timeStart || appt.timeEnd !== timeEnd) {
+            const appointmentDate = normalizeDate(appt.date);
+            if (
+                appointmentDate !== targetDate ||
+                appt.timeStart !== timeStart ||
+                appt.timeEnd !== timeEnd
+            ) {
                 return false;
             }
             return appt.status === 'pending' || !appt.status;

@@ -19,7 +19,7 @@ export default function NutritionistAppointmentDetailsInfoCard({ patientName }: 
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: colors.background,
+        backgroundColor: colors.surface,
         borderRadius: 24,
         padding: spacing.lg,
         marginBottom: spacing.lg,

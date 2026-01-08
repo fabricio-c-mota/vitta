@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     keyboardAvoid: {
         flex: 1,
     },
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: colors.surface },
 
     content: {
         paddingHorizontal: spacing.lg,

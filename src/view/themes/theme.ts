@@ -6,7 +6,7 @@ export const colors = {
     // Backgrounds
     background: '#FFFFFF',        // Fundo branco (telas claras)
     backgroundDark: '#020203',    // Fundo escuro (telas escuras)
-    surface: '#F5F5F7',           // Superfícies elevadas
+    surface: '#F5F5F7', 
     inputBackground: '#E4E4DC',   // Fundo dos inputs
     white: '#FFFFFF',             // Branco puro
     
