@@ -34,7 +34,7 @@ export default function MyAppointmentsScreen() {
     useRedirectEffect(navigationRoute, { method: navigationMethod, onComplete: clearNavigation });
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
             <ScreenHeader title="Minhas Consultas" onBack={goBack} />
 
             {appointmentsLoading && !refreshing ? (

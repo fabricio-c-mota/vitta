@@ -13,6 +13,7 @@ type AgendaAppointmentsProps = {
     refreshing: boolean;
     onRefresh: () => void;
     onSelectAppointment: (appointmentId: string) => void;
+    paddingBottom?: number;
 };
 
 export default function AgendaAppointments({
@@ -23,6 +24,7 @@ export default function AgendaAppointments({
     refreshing,
     onRefresh,
     onSelectAppointment,
+    paddingBottom = spacing.lg,
 }: AgendaAppointmentsProps) {
     if (!selectedDate) {
         return (
@@ -59,7 +61,9 @@ export default function AgendaAppointments({
                             onPress={() => onSelectAppointment(item.id)}
                         />
                     )}
+                    ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
                     showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom }}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}

@@ -31,29 +31,15 @@ export default function NutritionistAgendaCard({
                         </View>
 
                         <View style={styles.cardTextWrapper}>
-                            <Text style={styles.cardTitle}>Agenda de Hoje</Text>
+                            <Text style={styles.cardTitle} maxFontSizeMultiplier={1.2}>Agenda de Hoje</Text>
                             <Text style={styles.cardSubtitle}>
                                 {`Você tem ${todayAppointments.length} consulta(s) confirmada(s) hoje.`}
                             </Text>
                         </View>
                     </View>
 
-                    <View style={styles.appointmentsWrapper}>
-                        {todayAppointments.map((item, index) => (
-                            <View key={item.id}>
-                                <View style={styles.appointmentRow}>
-                                    <Text style={styles.appointmentName}>{item.patientName}</Text>
-                                    <Text style={styles.appointmentTime}>{item.time}</Text>
-                                </View>
-                                {index < todayAppointments.length - 1 && (
-                                    <View style={styles.divider} />
-                                )}
-                            </View>
-                        ))}
-                    </View>
-
                     <TouchableOpacity style={styles.secondaryButton} onPress={onPress}>
-                        <Text style={styles.secondaryButtonText}>Ver agenda completa</Text>
+                        <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={1.2}>Ver agenda completa</Text>
                     </TouchableOpacity>
                 </HomeCard>
             ) : showEmptyState ? (
@@ -70,7 +56,7 @@ export default function NutritionistAgendaCard({
                         </View>
 
                         <View style={styles.cardTextWrapper}>
-                            <Text style={styles.cardTitle}>Agenda de Hoje</Text>
+                            <Text style={styles.cardTitle} maxFontSizeMultiplier={1.2}>Agenda de Hoje</Text>
                             <Text style={styles.cardSubtitle}>
                                 Sua agenda está livre hoje!
                             </Text>
@@ -78,7 +64,7 @@ export default function NutritionistAgendaCard({
                     </View>
 
                     <TouchableOpacity style={styles.secondaryButton} onPress={onPress}>
-                        <Text style={styles.secondaryButtonText}>Ver agenda completa</Text>
+                        <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={1.2}>Ver agenda completa</Text>
                     </TouchableOpacity>
                 </HomeCard>
             )}

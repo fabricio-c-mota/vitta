@@ -52,7 +52,7 @@ export default function TextInputField({
 
     return (
         <View style={styles.fieldWrapper}>
-            <Text style={styles.label}>{label}</Text>
+            <Text style={styles.label} maxFontSizeMultiplier={1.2}>{label}</Text>
             <View style={[styles.inputContainer, showError && styles.inputContainerError]}>
                 <Feather name={icon} size={20} color={iconColor} style={styles.leftIcon} />
                 <TextInput
@@ -108,7 +108,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.inputBackground,
         borderRadius: borderRadius.lg + 2,
         paddingHorizontal: spacing.md,
-        height: 60,
+        paddingVertical: spacing.md,
+        minHeight: 60,
     },
     inputContainerError: {
         borderWidth: 1,

@@ -44,13 +44,13 @@ export default function NotificationsPermissionScreen() {
                         />
                     </View>
 
-                    <Text style={styles.title}>Permissão de notificações</Text>
+                    <Text style={styles.title} maxFontSizeMultiplier={1.2}>Permissão de notificações</Text>
                     <Text style={styles.subtitle}>
                         Precisamos enviar lembretes e avisos importantes sobre suas consultas.
                     </Text>
 
                     <View style={styles.card}>
-                        <Text style={styles.cardTitle}>O que você recebe</Text>
+                        <Text style={styles.cardTitle} maxFontSizeMultiplier={1.2}>O que você recebe</Text>
                         <View style={styles.cardRow}>
                             <View style={styles.cardIcon}>
                                 <Feather name="check-circle" size={16} color={colors.primary} />
@@ -84,7 +84,7 @@ export default function NotificationsPermissionScreen() {
                                 onPress={requestPermission}
                                 activeOpacity={0.9}
                             >
-                                <Text style={styles.primaryButtonText}>Permitir notificações</Text>
+                                <Text style={styles.primaryButtonText} maxFontSizeMultiplier={1.2}>Permitir notificações</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -92,7 +92,7 @@ export default function NotificationsPermissionScreen() {
                                 onPress={openSettings}
                                 activeOpacity={0.9}
                             >
-                                <Text style={styles.secondaryButtonText}>Abrir ajustes</Text>
+                                <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={1.2}>Abrir ajustes</Text>
                             </TouchableOpacity>
                         </>
                     )}

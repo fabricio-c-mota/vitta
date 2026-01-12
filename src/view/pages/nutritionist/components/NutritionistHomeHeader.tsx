@@ -15,7 +15,7 @@ export default function NutritionistHomeHeader({ name, onLogout }: NutritionistH
                 source={require("../../../assets/images/image.png")}
                 style={styles.avatar}
             />
-            <Text style={styles.headerText}>Olá, {name}!</Text>
+            <Text style={styles.headerText} maxFontSizeMultiplier={1.2}>Olá, {name}!</Text>
             <LogoutButton onPress={onLogout} />
         </View>
     );

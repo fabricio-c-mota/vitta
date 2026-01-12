@@ -5,18 +5,16 @@ import { colors, fontSizes, fonts, spacing } from "@/view/themes/theme";
 type Props = {
     submitting: boolean;
     disabled: boolean;
-    paddingBottom: number;
     onSubmit: () => void;
 };
 
 export default function ScheduleBottomBar({
     submitting,
     disabled,
-    paddingBottom,
     onSubmit,
 }: Props) {
     return (
-        <View style={[styles.bottomBar, { paddingBottom }]}>
+        <View style={styles.bottomBar}>
             <TouchableOpacity
                 style={[styles.submitButton, disabled && styles.submitDisabled]}
                 onPress={onSubmit}
@@ -26,7 +24,7 @@ export default function ScheduleBottomBar({
                 {submitting ? (
                     <ActivityIndicator color={colors.background} />
                 ) : (
-                    <Text style={styles.submitText}>Solicitar Consulta</Text>
+                    <Text style={styles.submitText} maxFontSizeMultiplier={1.2}>Solicitar Consulta</Text>
                 )}
             </TouchableOpacity>
         </View>
@@ -35,19 +33,17 @@ export default function ScheduleBottomBar({
 
 const styles = StyleSheet.create({
     bottomBar: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        bottom: 0,
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.md,
+        paddingBottom: spacing.md,
         backgroundColor: colors.surface,
         borderTopWidth: 1,
         borderTopColor: "rgba(0,0,0,0.06)",
     },
     submitButton: {
-        height: 64,
+        minHeight: 64,
         borderRadius: 32,
+        paddingVertical: spacing.md,
         backgroundColor: colors.primary,
         alignItems: "center",
         justifyContent: "center",

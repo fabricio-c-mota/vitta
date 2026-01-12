@@ -29,7 +29,6 @@ Identificar visualmente o aplicativo e preparar o ambiente inicial.
 **Descrição:**  
 Exibe a identidade visual do aplicativo enquanto o sistema verifica:
 - estado de autenticação do usuário;
-- permissões básicas (ex.: notificações, quando aplicável).
 
 **Comportamento:**
 - Se o usuário estiver autenticado, redireciona para a tela inicial do seu perfil.
@@ -39,16 +38,29 @@ Exibe a identidade visual do aplicativo enquanto o sistema verifica:
 
 ### 2.2 Tela de Login
 
-**Arquivo:** `src/view/pages/LoginScreen.tsx`
+**Arquivo:** `src/view/pages/auth/LoginScreen.tsx`
 
 **Objetivo:**  
 Permitir o acesso seguro ao aplicativo.
+
+**Descrição:**  
+Apresenta campos para autenticação via e-mail e senha (Firebase Authentication).
+
+**Elementos principais:**
+- Campo de e-mail
+- Campo de senha
+- Botão "Entrar"
+- Link "Esqueceu sua senha?"
+- Mensagens de erro por campo (e-mail/senha) e erro geral
+
+**Comportamento:**  
+Após login bem-sucedido, o sistema identifica o papel do usuário (paciente ou nutricionista) e redireciona para o fluxo correspondente.
 
 ---
 
 ### 2.3 Tela de Registro
 
-**Arquivo:** `src/view/pages/RegisterScreen.tsx`
+**Arquivo:** `src/view/pages/auth/RegisterScreen.tsx`
 
 **Objetivo:**  
 Permitir que novos pacientes criem uma conta no aplicativo.
@@ -60,24 +72,54 @@ Apresenta campos para cadastro de novo usuário.
 - Campo de nome
 - Campo de e-mail
 - Campo de senha
+- Campo de confirmar senha
 - Botão "Criar Conta"
 - Link "Já tenho conta" para voltar ao login
-- Mensagens de erro em caso de dados inválidos
+- Mensagens de erro por campo (nome/e-mail/senha/confirmação)
 
 **Comportamento:**  
 Após registro bem-sucedido, o usuário é automaticamente autenticado e redirecionado para a tela inicial do paciente.
 
-**Descrição:**  
-Apresenta campos para autenticação via e-mail e senha (Firebase Authentication).
+---
 
-**Elementos principais:**
-- Campo de e-mail
-- Campo de senha
-- Botão "Entrar"
-- Mensagens de erro em caso de credenciais inválidas
+### 2.4 Tela de Recuperação de Senha
+
+**Arquivo:** `src/view/pages/auth/ForgotPasswordScreen.tsx`
+
+**Objetivo:**  
+Permitir que o usuário solicite redefinição de senha via e-mail.
+
+**Descrição:**  
+Exibe o campo de e-mail e envia solicitação de recuperação via Firebase.
 
 **Comportamento:**  
-Após login bem-sucedido, o sistema identifica o papel do usuário (paciente ou nutricionista) e redireciona para o fluxo correspondente.
+Após enviar o e-mail, o usuário recebe confirmação visual e pode retornar ao login.
+
+---
+
+### 2.5 Permissão de Notificações
+
+**Arquivo:** `src/view/pages/NotificationsPermissionScreen.tsx`
+
+**Objetivo:**  
+Solicitar autorização de notificações para receber atualizações de consultas.
+
+**Comportamento:**  
+Esta tela é apresentada após o login, quando as permissões de calendário já foram concedidas.  
+Se o usuário negar a permissão, o app permanece nesta tela e orienta a abrir os ajustes.
+
+---
+
+### 2.6 Permissão de Calendário
+
+**Arquivo:** `src/view/pages/CalendarPermissionScreen.tsx`
+
+**Objetivo:**  
+Solicitar autorização para integrar o app ao calendário do dispositivo.
+
+**Comportamento:**  
+Esta tela é apresentada logo após o login.  
+Se o usuário negar a permissão, o app permanece nesta tela e orienta a abrir os ajustes.
 
 ---
 
@@ -124,8 +166,11 @@ Exibe um calendário interativo mensal (react-native-calendars) onde:
 **Restrições:**
 - Apenas horários disponíveis são exibidos
 - Horários já ocupados por consultas aceitas não aparecem
+- Horários com solicitação pendente do próprio paciente não aparecem
+- Horários no passado (inclusive no dia atual) não aparecem
 - Fins de semana não são exibidos como disponíveis
 - Não é possível solicitar sem selecionar um horário
+- Caso outro paciente já tenha uma solicitação pendente para o mesmo horário, o sistema bloqueia a solicitação no momento do envio
 
 **Comportamento:**  
 Ao confirmar a solicitação:
@@ -135,30 +180,7 @@ Ao confirmar a solicitação:
 
 ---
 
-### 3.3 Tela de Solicitação de Consulta
-
-**Arquivo:** `src/view/pages/patient/RequestAppointmentScreen.tsx`
-
-**Objetivo:**  
-Confirmar a solicitação de consulta pelo paciente.
-
-**Descrição:**  
-Exibe os dados escolhidos (data e horário) e permite ao paciente confirmar o pedido.
-
-**Elementos principais:**
-- Data e horário selecionados
-- Campo opcional de observações
-- Botão "Solicitar consulta"
-
-**Comportamento:**  
-Ao confirmar:
-- O sistema registra a solicitação no Firebase.
-- O status inicial da consulta é definido como "pendente".
-- O paciente recebe feedback visual de sucesso.
-
----
-
-### 3.4 Tela de Minhas Consultas
+### 3.3 Tela de Minhas Consultas
 
 **Arquivo:** `src/view/pages/patient/MyAppointmentsScreen.tsx`
 
@@ -186,11 +208,10 @@ Exibe uma lista de todas as consultas solicitadas pelo paciente com atualizaçã
 **Comportamento:**
 - Lista atualiza automaticamente quando status muda
 - Ao clicar em uma consulta, navega para os detalhes
-- Consultas aceitas podem ter opção de adicionar ao calendário (Sprint 4)
 
 ---
 
-### 3.5 Tela de Detalhes da Consulta (Paciente)
+### 3.4 Tela de Detalhes da Consulta (Paciente)
 
 **Arquivo:** `src/view/pages/patient/AppointmentDetailsScreen.tsx`
 
@@ -218,7 +239,7 @@ Mostra os detalhes da consulta selecionada com status visual e ações disponív
 
 **Comportamento:**
 - Consultas pendentes ou aceitas podem ser canceladas
-- Ao cancelar, retorna para "Minhas Consultas"
+- Ao cancelar, mantém a consulta listada com status "cancelada"
 - Consultas recusadas ou canceladas exibem apenas informações
 
 ---
@@ -265,45 +286,17 @@ Exibe uma lista de solicitações com status "pendente" com atualização em tem
 
 **Comportamento:**  
 Ao aceitar:
-- O status é alterado para "accepted"
+- O status é alterado para "aceita"
 - A consulta é removida da lista de pendentes
 - A lista atualiza automaticamente
 
 Ao recusar:
-- O status é alterado para "rejected"
+- O status é alterado para "recusada"
 - A consulta é removida da lista de pendentes
 
 ---
 
-### 4.3 Tela de Detalhes da Solicitação
-
-**Arquivo:** `src/view/pages/nutritionist/RequestDetailsScreen.tsx`
-
-**Objetivo:**  
-Permitir a decisão sobre uma solicitação de consulta.
-
-**Descrição:**  
-Exibe todas as informações relevantes da solicitação.
-
-**Elementos principais:**
-- Dados do paciente
-- Data e horário solicitados
-- Botão "Aceitar"
-- Botão "Recusar"
-
-**Comportamento:**  
-Ao aceitar:
-- O sistema verifica conflitos de horário.
-- O status é alterado para "aceita".
-- A consulta passa a integrar a agenda confirmada.
-
-Ao recusar:
-- O status é alterado para "recusada".
-- O paciente é notificado.
-
----
-
-### 4.4 Tela de Agenda da Nutricionista
+### 4.3 Tela de Agenda da Nutricionista
 
 **Arquivo:** `src/view/pages/nutritionist/AgendaScreen.tsx`
 
@@ -311,11 +304,11 @@ Ao recusar:
 Visualizar todas as consultas confirmadas em formato de calendário.
 
 **Descrição:**  
-Apresenta um calendário interativo (react-native-calendars) mostrando apenas consultas com status "aceita".
+Apresenta um calendário interativo (react-native-calendars) mostrando consultas com status "aceita" e "cancelada".
 
 **Elementos principais:**
 - Calendário mensal interativo
-- Dias com consultas marcados com indicador verde
+- Dias com consultas marcados com indicador visual
 - Lista de consultas do dia selecionado
 - Cards clicáveis para cada consulta
 - Filtros: Todos, Esta Semana, Hoje
@@ -332,9 +325,9 @@ Apresenta um calendário interativo (react-native-calendars) mostrando apenas co
 
 ---
 
-### 4.5 Tela de Detalhes da Consulta (Nutricionista)
+### 4.4 Tela de Detalhes da Consulta (Nutricionista)
 
-**Arquivo:** `src/view/pages/nutritionist/AppointmentDetailsScreen.tsx`
+**Arquivo:** `src/view/pages/nutritionist/NutritionistAppointmentDetailsScreen.tsx`
 
 **Objetivo:**  
 Visualizar e gerenciar uma consulta (pendente, aceita ou cancelada).
@@ -357,33 +350,20 @@ Exibe os detalhes completos da consulta com ações baseadas no status.
 - Ao aceitar pendente, verifica conflitos e alerta se houver
 - Ao recusar, atualiza status e retorna
 - Ao cancelar, atualiza status e retorna para Agenda
-- Ao aceitar novamente consulta cancelada, verifica conflitos e reativa
+- Ao aceitar novamente consulta cancelada, verifica conflitos e pode abrir a tela de resolução de conflitos
 - Consultas recusadas exibem apenas informações
 
 ---
 
-## 5. Telas de Apoio do Sistema
+### 4.5 Tela de Resolução de Conflitos (Nutricionista)
 
-### 5.1 Permissão de Calendário
-
-**Objetivo:**  
-Solicitar autorização para integrar o app ao calendário do dispositivo.
-
-**Descrição:**  
-Exibe explicação clara do motivo da permissão (organização da agenda e lembretes).
-
-**Comportamento:**  
-Se o usuário negar a permissão, o app continua funcionando normalmente, sem integração automática.
-
----
-
-### 5.2 Permissão de Notificações
+**Arquivo:** `src/view/pages/nutritionist/NutritionistConflictResolutionScreen.tsx`
 
 **Objetivo:**  
-Permitir o envio de lembretes de consulta.
+Resolver conflitos quando a nutricionista tenta aceitar/reativar duas consultas no mesmo horário.
 
 **Descrição:**  
-Solicita permissão para envio de notificações locais.
+Exibe as consultas aceitas e canceladas do mesmo horário para seleção da consulta válida.
 
 **Comportamento:**  
-Caso aceito, o sistema agenda lembretes automáticos para consultas confirmadas.
+Ao confirmar a escolha, a consulta selecionada permanece "aceita" e as demais ficam "canceladas". Em seguida, o app exibe mensagem de sucesso e retorna para a agenda ao confirmar.

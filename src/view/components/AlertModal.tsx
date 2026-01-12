@@ -44,7 +44,7 @@ export default function AlertModal({
             <Feather name={icon as any} size={22} color={accent} />
           </View>
 
-          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title} maxFontSizeMultiplier={1.2}>{title}</Text>
 
           {!!message && <Text style={styles.subtitle}>{message}</Text>}
 
@@ -53,7 +53,7 @@ export default function AlertModal({
             onPress={onConfirm}
             activeOpacity={0.9}
           >
-            <Text style={styles.btnText}>{confirmText}</Text>
+            <Text style={styles.btnText} maxFontSizeMultiplier={1.2}>{confirmText}</Text>
           </TouchableOpacity>
         </View>
       </View>

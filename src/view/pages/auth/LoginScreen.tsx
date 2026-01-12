@@ -9,14 +9,17 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
     StyleSheet,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, fonts, spacing, fontSizes } from "@/view/themes/theme";
 import TextInputField from "@/view/pages/auth/components/TextInputField";
 import { useAuthLoginViewModel } from "@/di/container";
 import useRedirectEffect from "@/view/hooks/useRedirectEffect";
 
 export default function LoginScreen() {
+    const insets = useSafeAreaInsets();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const {
@@ -57,8 +60,12 @@ export default function LoginScreen() {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <View style={styles.container}>
-                    <View>
+                <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
                         <View style={styles.logoWrapper}>
                             <Image
                                 source={require("../../assets/images/image.png")}
@@ -66,7 +73,7 @@ export default function LoginScreen() {
                             />
                         </View>
 
-                        <Text style={styles.title}>Bem-vindo(a) de volta!</Text>
+                        <Text style={styles.title} maxFontSizeMultiplier={1.2}>Bem-vindo(a) de volta!</Text>
                         <Text style={styles.subtitle}>Faça login para continuar</Text>
 
                         <TextInputField
@@ -97,7 +104,7 @@ export default function LoginScreen() {
                         />
 
                         <TouchableOpacity style={styles.forgotButton} onPress={goToForgotPassword}>
-                            <Text style={styles.forgotText}>Esqueceu sua senha?</Text>
+                            <Text style={styles.forgotText} maxFontSizeMultiplier={1.2}>Esqueceu sua senha?</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -108,17 +115,17 @@ export default function LoginScreen() {
                             {loading ? (
                                 <ActivityIndicator color={colors.background} />
                             ) : (
-                                <Text style={styles.loginButtonText}>Entrar</Text>
+                                <Text style={styles.loginButtonText} maxFontSizeMultiplier={1.2}>Entrar</Text>
                             )}
                         </TouchableOpacity>
-                    </View>
 
-                    <View style={styles.footer}>
-                        <Text style={styles.footerText}>
-                            Não tem uma conta?
-                            <Text style={styles.footerHighlight} onPress={goToRegister}> Cadastre-se</Text>
-                        </Text>
-                    </View>
+                        <View style={styles.footer}>
+                            <Text style={styles.footerText}>
+                                Não tem uma conta?
+                                <Text style={styles.footerHighlight} onPress={goToRegister}> Cadastre-se</Text>
+                            </Text>
+                        </View>
+                    </ScrollView>
                 </View>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
@@ -132,10 +139,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.surface,
+        flexDirection: "column",
+    },
+    scrollContent: {
+        flexGrow: 1,
         paddingHorizontal: spacing.lg,
-        paddingTop: 72,
-        paddingBottom: spacing.xl,
-        justifyContent: "space-between",
+        justifyContent: "center",
     },
     logoWrapper: {
         alignSelf: "center",
@@ -177,7 +186,8 @@ const styles = StyleSheet.create({
     },
     loginButton: {
         backgroundColor: colors.primary,
-        height: 64,
+        minHeight: 64,
+        paddingVertical: spacing.md,
         borderRadius: 32,
         alignItems: "center",
         justifyContent: "center",

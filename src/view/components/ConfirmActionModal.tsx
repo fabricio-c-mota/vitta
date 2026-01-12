@@ -49,7 +49,7 @@ export default function ConfirmActionModal({
             <Feather name={iconName} size={22} color={accent} />
           </View>
 
-          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title} maxFontSizeMultiplier={1.2}>{title}</Text>
 
           {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
 
@@ -60,7 +60,7 @@ export default function ConfirmActionModal({
               disabled={loading}
               activeOpacity={0.85}
             >
-              <Text style={styles.btnGhostText}>{cancelText}</Text>
+              <Text style={styles.btnGhostText} maxFontSizeMultiplier={1.2}>{cancelText}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -73,7 +73,7 @@ export default function ConfirmActionModal({
               disabled={loading}
               activeOpacity={0.9}
             >
-              <Text style={styles.btnText}>{confirmLabel}</Text>
+              <Text style={styles.btnText} maxFontSizeMultiplier={1.2}>{confirmLabel}</Text>
             </TouchableOpacity>
           </View>
         </View>

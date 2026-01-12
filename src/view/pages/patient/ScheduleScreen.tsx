@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Dimensions, StyleSheet } from "react-native";
+import { View, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, borderRadius, spacing } from "@/view/themes/theme";
 import ScreenHeader from "@/view/components/ScreenHeader";
@@ -94,7 +94,7 @@ export default function ScheduleScreen() {
   });
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <ScreenHeader title="Agenda" onBack={goBack} />
 
       <View style={styles.calendarCard}>
@@ -109,7 +109,11 @@ export default function ScheduleScreen() {
         />
       </View>
 
-      <View style={styles.appointmentsSection}>
+      <ScrollView
+        style={styles.appointmentsSection}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, spacing.lg) + 20 }}
+        showsVerticalScrollIndicator={false}
+      >
         <ScheduleSlotsSection
           selectedDate={selectedDate}
           selectedDateFormatted={selectedDateFormatted}
@@ -119,13 +123,13 @@ export default function ScheduleScreen() {
           pillWidth={pillWidth}
           gap={GAP}
           onSelectTime={handleSelectTime}
+          paddingBottom={spacing.lg}
         />
-      </View>
+      </ScrollView>
 
       <ScheduleBottomBar
         submitting={submitting}
         disabled={submitting || !selectedSlot}
-        paddingBottom={Math.max(spacing.lg, insets.bottom + 10)}
         onSubmit={() => submitAppointment(patientId)}
       />
 

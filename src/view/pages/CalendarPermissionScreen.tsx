@@ -44,13 +44,13 @@ export default function CalendarPermissionScreen() {
                         />
                     </View>
 
-                    <Text style={styles.title}>Permissão de calendário</Text>
+                    <Text style={styles.title} maxFontSizeMultiplier={1.2}>Permissão de calendário</Text>
                     <Text style={styles.subtitle}>
                         O Vitta precisa do seu calendário para organizar consultas e enviar lembretes.
                     </Text>
 
                     <View style={styles.card}>
-                        <Text style={styles.cardTitle}>O que fazemos com isso</Text>
+                        <Text style={styles.cardTitle} maxFontSizeMultiplier={1.2}>O que fazemos com isso</Text>
                         <View style={styles.cardRow}>
                             <View style={styles.cardIcon}>
                                 <Feather name="calendar" size={16} color={colors.primary} />
@@ -84,7 +84,7 @@ export default function CalendarPermissionScreen() {
                                 onPress={requestPermission}
                                 activeOpacity={0.9}
                             >
-                                <Text style={styles.primaryButtonText}>Permitir acesso</Text>
+                                <Text style={styles.primaryButtonText} maxFontSizeMultiplier={1.2}>Permitir acesso</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -92,7 +92,7 @@ export default function CalendarPermissionScreen() {
                                 onPress={openSettings}
                                 activeOpacity={0.9}
                             >
-                                <Text style={styles.secondaryButtonText}>Abrir ajustes</Text>
+                                <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={1.2}>Abrir ajustes</Text>
                             </TouchableOpacity>
                         </>
                     )}

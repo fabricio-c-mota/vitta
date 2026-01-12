@@ -8,6 +8,7 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
     StyleSheet,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -62,29 +63,36 @@ export default function ForgotPasswordScreen() {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <View style={[styles.container, { paddingTop: insets.top }]}>
+                <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
                     <ScreenHeader title="Recuperar Senha" />
 
-                    <View style={styles.content}>
-                        <Text style={styles.title}>Esqueceu sua senha?</Text>
-                        <Text style={styles.subtitle}>
-                            Informe seu e-mail para enviarmos um link de redefinição.
-                        </Text>
+                    <ScrollView
+                        style={styles.scrollContent}
+                        contentContainerStyle={styles.scrollContentContainer}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.content}>
+                            <Text style={styles.title} maxFontSizeMultiplier={1.2}>Esqueceu sua senha?</Text>
+                            <Text style={styles.subtitle}>
+                                Informe seu e-mail para enviarmos um link de redefinição.
+                            </Text>
 
-                        <TextInputField
-                            label="E-mail"
-                            placeholder="Digite seu e-mail"
-                            value={email}
-                            onChangeText={handleEmailChange}
-                            icon="mail"
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoComplete="email"
-                            textContentType="emailAddress"
-                            error={emailError ?? undefined}
-                            hasError={!!emailError}
-                        />
-                    </View>
+                            <TextInputField
+                                label="E-mail"
+                                placeholder="Digite seu e-mail"
+                                value={email}
+                                onChangeText={handleEmailChange}
+                                icon="mail"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                autoComplete="email"
+                                textContentType="emailAddress"
+                                error={emailError ?? undefined}
+                                hasError={!!emailError}
+                            />
+                        </View>
+                    </ScrollView>
 
                     <View style={styles.bottomBar}>
                         <TouchableOpacity
@@ -96,7 +104,7 @@ export default function ForgotPasswordScreen() {
                             {resetLoading ? (
                                 <ActivityIndicator color={colors.background} />
                             ) : (
-                                <Text style={styles.submitText}>Enviar link</Text>
+                                <Text style={styles.submitText} maxFontSizeMultiplier={1.2}>Enviar link</Text>
                             )}
                         </TouchableOpacity>
                     </View>
@@ -121,11 +129,24 @@ const styles = StyleSheet.create({
     keyboardAvoid: {
         flex: 1,
     },
-    container: { flex: 1, backgroundColor: colors.surface },
+    container: {
+        flex: 1,
+        backgroundColor: colors.surface,
+        flexDirection: "column",
+    },
+
+    scrollContent: {
+        flex: 1,
+    },
+
+    scrollContentContainer: {
+        flexGrow: 1,
+        justifyContent: "center",
+    },
 
     content: {
         paddingHorizontal: spacing.lg,
-        paddingTop: spacing.xl,
+        paddingVertical: spacing.xl,
     },
 
     title: {
@@ -143,22 +164,21 @@ const styles = StyleSheet.create({
     },
 
     bottomBar: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        bottom: 0,
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.md,
-        paddingBottom: spacing.lg,
+        paddingBottom: spacing.md,
         backgroundColor: colors.surface,
+        borderTopWidth: 1,
+        borderTopColor: "rgba(0,0,0,0.06)",
     },
 
     submitButton: {
-        height: 60,
+        minHeight: 60,
         borderRadius: 30,
         backgroundColor: colors.primary,
         alignItems: "center",
         justifyContent: "center",
+        paddingVertical: spacing.md,
         shadowColor: "#000",
         shadowOpacity: 0.12,
         shadowOffset: { width: 0, height: 10 },

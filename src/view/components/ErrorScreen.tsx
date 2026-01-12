@@ -16,12 +16,12 @@ export default function ErrorScreen({ message, onRetry }: Props) {
                     <Feather name="alert-circle" size={64} color={colors.error} />
                 </View>
                 
-                <Text style={styles.title}>Ops! Algo deu errado</Text>
+                <Text style={styles.title} maxFontSizeMultiplier={1.2}>Ops! Algo deu errado</Text>
                 <Text style={styles.message}>{message}</Text>
 
                 {onRetry && (
                     <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-                        <Text style={styles.retryButtonText}>Tentar novamente</Text>
+                        <Text style={styles.retryButtonText} maxFontSizeMultiplier={1.2}>Tentar novamente</Text>
                     </TouchableOpacity>
                 )}
             </View>

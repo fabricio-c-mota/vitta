@@ -1,12 +1,7 @@
-<!--
-Objetivo: Definir a arquitetura e padrões de desenvolvimento do projeto.
-Escopo: Estrutura de código, organização de camadas e boas práticas.
--->
-
 # Guia de Arquitetura do Projeto
 
 **App de Agendamento de Consultas Nutricionais**  
-*React Native + Expo + Firebase*
+*React Native + Expo + Firebase (dados/autenticação) + Supabase (push) + Expo Calendar e Notifications*
 
 ---
 
@@ -15,7 +10,7 @@ Escopo: Estrutura de código, organização de camadas e boas práticas.
 Este documento estabelece a organização do código e as boas práticas a serem seguidas no desenvolvimento do aplicativo de agendamento de consultas nutricionais.
 
 ### Principais objetivos:
-- Aplicar o padrão **MVVM simplificado** em React Native
+- Aplicar o padrão **MVVM sofisticado** em React Native
 - Garantir **separação de responsabilidades** (View, ViewModel, Model, Use Case, Infra, DI)
 - Facilitar **testes automatizados** (unitários e de integração)
 - Implementar **Inversão de Dependência** (DIP) e **Injeção de Dependência** (via construtor/fábricas)
@@ -37,6 +32,7 @@ Adotamos o **MVVM Sofisticado** com camadas claras e independentes:
 
 ### **ViewModel**
 - Intermediária entre View e Use Cases.
+- Implementada como **hooks** em `src/viewmodel`.
 - Gerencia estado da UI (loading, erros, dados) e expõe comandos.
 - Depende apenas de **interfaces de Use Cases** (injeção via DI).
 - Não contém regras de negócio.
@@ -53,12 +49,14 @@ Adotamos o **MVVM Sofisticado** com camadas claras e independentes:
 - Definições de erros de domínio.
 
 ### **Infra**
-- Implementações concretas das interfaces de domínio (Firebase, calendário, notificações, etc.).
+- Implementações concretas das interfaces de domínio (Firebase, calendário, notificações, Supabase push).
 - Não vaza detalhes de tecnologia para o domínio.
+- Converte erros de infraestrutura em erros de domínio.
 
 ### **Dependency Injection (DI)**
 - `src/di` monta dependências.
 - View consome **hooks de ViewModel já injetados** (ex.: factories/containers) sem acessar Use Cases.
+- `app.config.ts` tipado injeta chaves `EXPO_PUBLIC_*` (Firebase, Supabase) no `extra`.
 
 ### Princípio Central:
 > A **ViewModel** depende apenas de **interfaces de Use Cases**, e a View só conhece **state/actions**. As dependências são injetadas via DI.
@@ -177,7 +175,7 @@ export function makeRequestAppointmentUseCase(): RequestAppointmentUseCase {
 
 - **Interfaces** vivem no domínio (`model/services` ou equivalente)
 - **Implementações concretas** vivem em `infra/`
-- **ViewModel** depende da interface, recebida via construtor
+- **ViewModel** depende da interface, recebida via parâmetros do hook
 
 ### 4.2 Exemplo Conceitual
 
@@ -215,30 +213,40 @@ export class RequestAppointmentUseCase {
 }
 ```
 
-#### ViewModel usando injeção via construtor:
+#### ViewModel como Hook (injeção direta):
 ```typescript
-// viewmodel/PatientScheduleViewModel.ts
-export class PatientScheduleViewModel {
-  constructor(
-    private readonly requestAppointment: RequestAppointmentUseCase
-  ) {}
+// viewmodel/usePatientScheduleViewModel.ts
+export function usePatientScheduleViewModel(
+  requestAppointment: RequestAppointmentUseCase
+) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async handleRequestAppointment(/* dados da tela */) {
-    await this.requestAppointment.execute(/* dados */);
-    // Tratar estado, erros, feedback de sucesso
+  async function handleRequestAppointment(/* dados da tela */) {
+    setLoading(true);
+    setError(null);
+    try {
+      await requestAppointment.execute(/* dados */);
+    } catch (err: any) {
+      setError(err.message ?? "Falha inesperada.");
+    } finally {
+      setLoading(false);
+    }
   }
+
+  return { loading, error, handleRequestAppointment };
 }
 ```
 
-### 4.3 Hook como Adaptador da ViewModel
+### 4.3 Observações sobre ViewModel
 
-O Hook (ex.: `usePatientScheduleViewModel`) apenas:
-- Cria uma instância da ViewModel com as dependências corretas
+O ViewModel como hook:
+- Recebe dependências por parâmetro (injeção via DI)
 - Gerencia estado de React (`useState`/`useEffect`)
-- Chama os métodos da ViewModel
+- Expõe ações consumidas diretamente pela View
 
 **Benefícios:**
-- Testar a ViewModel isoladamente (apenas classes TypeScript)
+- Testar a ViewModel com `renderHook` e mocks das interfaces
 - Injetar mocks das interfaces nos testes
 - Manter a integração fácil com React Native
 
@@ -301,7 +309,7 @@ tests/
 - Entidades como `Appointment`, `User` devem estar em `model/entities`
 
 ### Naming Consistente
-- **ViewModel**: `SomethingViewModel.ts` e hook `useSomethingViewModel.ts`
+- **ViewModel**: `useSomethingViewModel.ts`
 - **Repositórios/Serviços (contratos)**: `IAppointmentRepository`, `IAuthService`
 - **Use Cases**: `ActionNameUseCase` (ex.: `RequestAppointmentUseCase`)
 
@@ -356,100 +364,21 @@ Sempre que for adicionar uma nova funcionalidade:
 - Regras de segurança configuradas para isolar dados por usuário
 
 ### Notificações (expo-notifications)
-- Encapsuladas em `INotificationProvider` + `ExpoNotificationProvider`
+- Encapsuladas em `IPushNotificationService` (permissões/token) e `IPushNotificationSender` (envio via Supabase Edge Functions)
+- Tokens são persistidos em `users.pushTokens` no Firestore
+- O envio é feito pela Edge Function `supabase/functions/push-notify` via Expo Push API
 
 ### Calendário (expo-calendar)
-- Encapsulado em `ICalendarProvider` + `ExpoCalendarProvider`
-- Pedir permissão e lidar com negativa de forma graciosa (sem quebrar o app)
+- Encapsulado em `ICalendarService`
+- Eventos são criados/atualizados quando a consulta é aceita e removidos quando é cancelada/recusada
+- Lembrete padrão: 24h antes (via calendário nativo)
+- Permissão é obrigatória: se negada, o app redireciona para a tela de permissão
 
 ---
 
-## 9. Configuração de Disponibilidade de Horários
+## 9. Resumo
 
-### 9.1 Regras de Disponibilidade
-
-A disponibilidade de horários para consultas é **configurada no código** (hardcoded) com as seguintes regras:
-
-- **Dias disponíveis:** Segunda a Sexta-feira (dias úteis)
-- **Horário de funcionamento:** 9h às 16h
-- **Duração da consulta:** 2 horas cada
-- **Slots de horário:**
-  - 09:00 - 11:00
-  - 11:00 - 13:00
-  - 13:00 - 15:00
-  - 14:00 - 16:00
-- **Fins de semana:** Não disponíveis
-- **Feriados:** Não há tratamento especial (futura implementação se necessário)
-
-### 9.2 Implementação
-
-A lógica de disponibilidade deve estar em:
-- **Use Case:** `GetAvailableTimeSlotsUseCase` ou equivalente
-- **Localização:** `src/usecase/`
-- **Responsabilidade:** Gerar lista de slots disponíveis e filtrar os já ocupados
-
-**Exemplo conceitual:**
-```typescript
-// usecase/GetAvailableTimeSlotsUseCase.ts
-export class GetAvailableTimeSlotsUseCase {
-  private readonly TIME_SLOTS = [
-    { start: '09:00', end: '11:00' },
-    { start: '11:00', end: '13:00' },
-    { start: '13:00', end: '15:00' },
-    { start: '14:00', end: '16:00' },
-  ];
-
-  constructor(
-    private readonly appointmentRepository: IAppointmentRepository
-  ) {}
-
-  async execute(date: Date): Promise<TimeSlot[]> {
-    // Verifica se é dia útil (seg-sex)
-    if (isWeekend(date)) return [];
-    
-    // Busca consultas aceitas para aquela data
-    const acceptedAppointments = await this.appointmentRepository
-      .getAcceptedByDate(date);
-    
-    // Filtra slots já ocupados
-    return this.TIME_SLOTS.filter(slot => 
-      !acceptedAppointments.some(apt => 
-        apt.time === slot.start
-      )
-    );
-  }
-}
-```
-
-### 9.3 Restrições
-
-- **Não há edição de disponibilidade pelo usuário:** A configuração é fixa no código
-- **Conflitos são verificados automaticamente:** Sistema não permite duas consultas aceitas no mesmo horário do mesmo dia
-- **Paciente vê apenas slots livres:** Horários ocupados não aparecem na lista
-
----
-
-## 10. Funcionalidades Não Implementadas
-
-Para manter o escopo do projeto gerenciável, as seguintes funcionalidades **NÃO** serão implementadas:
-
-### 10.1 Edição de Perfil
-- Usuários não podem editar nome, e-mail ou outros dados
-- Alterações devem ser feitas manualmente no Firebase Console
-
-### 10.2 Recuperação de Senha
-- Não há funcionalidade de "Esqueci minha senha" no app
-- Redefinição de senha deve ser feita manualmente no Firebase Console
-
-### 10.3 Gestão de Disponibilidade
-- Nutricionista não pode alterar horários de funcionamento pelo app
-- Mudanças na configuração de horários requerem alteração no código
-
----
-
-## 11. Resumo
-
-- O projeto segue **MVVM simplificado** com camadas claras
+- O projeto segue **MVVM sofisticado** com camadas claras
 - **Domínio não conhece Firebase nem Expo**: apenas interfaces e regras de negócio
 - **Inversão de dependência**: interfaces no domínio, implementações na infra
 - **Injeção por construtor** permite:

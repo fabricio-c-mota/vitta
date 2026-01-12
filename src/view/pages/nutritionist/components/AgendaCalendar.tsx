@@ -28,9 +28,9 @@ export default function AgendaCalendar({ markedDates, onDayPress }: AgendaCalend
                     textDayFontFamily: fonts.bold,
                     textMonthFontFamily: fonts.bold,
                     textDayHeaderFontFamily: fonts.bold,
-                    textDayFontSize: fontSizes.md,
+                    textDayFontSize: 17,
                     textMonthFontSize: fontSizes.xl,
-                    textDayHeaderFontSize: fontSizes.smMd,
+                    textDayHeaderFontSize: fontSizes.sm,
                 }}
                 markedDates={markedDates}
                 onDayPress={onDayPress}

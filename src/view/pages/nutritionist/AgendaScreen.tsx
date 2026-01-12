@@ -88,7 +88,7 @@ export default function AgendaScreen() {
     }
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
             <ScreenHeader title="Agenda" />
 
             <AgendaFilters options={filters} value={filter} onChange={setFilter} />
@@ -103,6 +103,7 @@ export default function AgendaScreen() {
                     refreshing={refreshing}
                     onRefresh={refresh}
                     onSelectAppointment={openAppointment}
+                    paddingBottom={Math.max(insets.bottom, spacing.lg) + 20}
                 />
             </View>
         </View>

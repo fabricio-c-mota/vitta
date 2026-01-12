@@ -1,386 +1,146 @@
-<!--
-Objetivo: Documentar a arquitetura de componentes, deployment e dependências do sistema.
-Escopo: Visão abstrata de onde o app executa e de onde consome serviços.
--->
-
 # Documentação de Componentes
 
----
-
-## 1. Visão Geral do Sistema
-
-O sistema é composto por um **aplicativo móvel** que se comunica com **serviços externos** para persistência, autenticação e funcionalidades do dispositivo.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      DISPOSITIVO MÓVEL                          │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                    APLICAÇÃO VITTA                        │  │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐      │  │
-│  │  │  View   │→ │ViewModel│→ │ UseCase │→ │  Model  │      │  │
-│  │  └─────────┘  └─────────┘  └─────────┘  └────┬────┘      │  │
-│  │                                              │            │  │
-│  │                                    ┌─────────▼─────────┐  │  │
-│  │                                    │   Infraestrutura  │  │  │
-│  │                                    │    (Adaptadores)  │  │  │
-│  │                                    └─────────┬─────────┘  │  │
-│  └──────────────────────────────────────────────┼────────────┘  │
-│                                                 │                │
-│  ┌──────────────────────────────────────────────┼────────────┐  │
-│  │              SERVIÇOS DO DISPOSITIVO         │            │  │
-│  │  ┌────────────┐  ┌────────────┐  ┌──────────▼─────────┐  │  │
-│  │  │ Calendário │  │Notificações│  │   Armazenamento    │  │  │
-│  │  │   Nativo   │  │   Locais   │  │      Local         │  │  │
-│  │  └────────────┘  └────────────┘  └────────────────────┘  │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              │ REDE (HTTPS)
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     SERVIÇOS REMOTOS                            │
-│  ┌───────────────────┐  ┌───────────────────────────────────┐  │
-│  │ Provedor de       │  │ Provedor de Persistência          │  │
-│  │ Autenticação      │  │ (Banco de Dados em Nuvem)         │  │
-│  │                   │  │                                   │  │
-│  │ • Login/Logout    │  │ • Coleção: Usuários               │  │
-│  │ • Registro        │  │ • Coleção: Consultas              │  │
-│  │ • Sessão          │  │ • Listeners em tempo real         │  │
-│  └───────────────────┘  └───────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
+Este documento descreve **visualmente** os diagramas principais do sistema **Vitta**.  
 
 ---
 
-## 2. Componentes do Sistema
+## 1) Visão Lógica
 
-### 2.1 Aplicação Móvel (Cliente)
+### Visão lógica
+![Visão lógica](./image/visao-logica.png)
 
-| Componente | Responsabilidade | Tecnologia Base |
-|------------|------------------|-----------------|
-| **View** | Renderizar interface, capturar interações | React Native |
-| **ViewModel** | Gerenciar estado da UI, expor ações | TypeScript Classes |
-| **UseCase** | Implementar regras de negócio | TypeScript Classes |
-| **Model** | Definir entidades e contratos | TypeScript Interfaces |
-| **Infra** | Adaptar serviços externos às interfaces do domínio | Implementações concretas |
-| **DI Container** | Montar e injetar dependências | Fábricas TypeScript |
+**Descrição visual:**  
+O diagrama organiza o **App Vitta** em camadas e deixa explícitas as relações entre elas.  
+No bloco “Camadas”, o **DI Container** aparece como ponto de composição, ligando a **View** e o **ViewModel**.  
+A **View** consome ações e estado do **ViewModel** (seta “usa”).  
+O **ViewModel** chama o **UseCase** (seta “chama”), e o **UseCase** depende das **interfaces** do **Model** (seta “depende de interfaces”).  
+A **Infra (Adaptadores)** implementa essas interfaces (seta pontilhada “implementa”) e faz a integração com serviços externos.  
+À direita, os serviços remotos mostram o fluxo de autenticação e dados: **Firebase Auth** e **Firestore**.  
+O caminho de notificações segue: **Infra → Supabase Edge (push) → Expo Push API → Notificações nativas**.  
+Na base, a comunicação com serviços do dispositivo mostra duas saídas diretas da Infra:  
+**permissões + token** para notificações e **eventos** para o **calendário nativo**.
 
-### 2.2 Serviços do Dispositivo
-
-| Serviço | Propósito | Interface de Domínio |
-|---------|-----------|---------------------|
-| **Calendário Nativo** | Sincronizar eventos com agenda do usuário | `ICalendarProvider` |
-| **Notificações Locais** | Agendar lembretes no dispositivo | `INotificationProvider` |
-| **Armazenamento Local** | Cache e persistência offline (futuro) | `ILocalStorage` |
-
-### 2.3 Serviços Remotos
-
-| Serviço | Propósito | Interface de Domínio |
-|---------|-----------|---------------------|
-| **Provedor de Autenticação** | Gerenciar identidade e sessão | `IAuthService` |
-| **Provedor de Persistência** | Armazenar e consultar dados | `IUserRepository`, `IAppointmentRepository` |
+**Como os componentes se comunicam:**
+- View -> ViewModel -> UseCase -> Model
+- Infra **implementa** interfaces do Model
+- Infra chama Firebase, Supabase e Expo Push
+- Infra chama Calendário e Notificações nativas
 
 ---
 
-## 3. Fluxo de Dependências
+## 2) Visão Física (Deployment)
 
-### 3.1 Princípio de Inversão
+### Visão física
+![Visão física](./image/visao-fisica.png)
 
-O domínio **não conhece** implementações concretas. A comunicação é feita através de **interfaces** (contratos):
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         DOMÍNIO                             │
-│                    (Model + UseCase)                        │
-│                                                             │
-│   Define interfaces:                                        │
-│   • IAuthService                                            │
-│   • IUserRepository                                         │
-│   • IAppointmentRepository                                  │
-│   • ICalendarProvider                                       │
-│   • INotificationProvider                                   │
-│                                                             │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ depende de (interfaces)
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     INFRAESTRUTURA                          │
-│                                                             │
-│   Implementa interfaces:                                    │
-│   • ConcreteAuthService implements IAuthService             │
-│   • ConcreteUserRepository implements IUserRepository       │
-│   • ConcreteAppointmentRepo implements IAppointmentRepo     │
-│   • ConcreteCalendarProvider implements ICalendarProvider   │
-│   • ConcreteNotificationProvider implements INotification   │
-│                                                             │
-│   Conecta com serviços externos reais                       │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 3.2 Matriz de Dependências
-
-| Camada | Depende de | Não depende de |
-|--------|-----------|----------------|
-| **View** | ViewModel | UseCase, Model, Infra |
-| **ViewModel** | UseCase (via interface) | Infra, Serviços externos |
-| **UseCase** | Model (interfaces) | Infra, Serviços externos |
-| **Model** | Nada | Tudo externo |
-| **Infra** | Model (interfaces), Serviços externos | View, ViewModel |
+**Descrição visual:**  
+O diagrama posiciona o **App Vitta** dentro do dispositivo (iOS/Android) e separa o que roda localmente do que roda na nuvem.  
+À esquerda, o app cria e atualiza eventos no **Calendário nativo** e interage com **Notificações nativas**, incluindo o fluxo de **permissões + token**.  
+No centro, o tráfego sai do dispositivo via **Internet (HTTPS/TLS)** e chega aos serviços remotos.  
+À direita, a camada **Nuvem (BaaS)** concentra **Firestore** (dados), **Firebase Auth** (autenticação) e **Supabase Edge (push notify)**.  
+O push segue para a **Expo Push API**, que entrega a notificação de volta ao dispositivo.  
+O foco é mostrar a **topologia de execução** e o caminho físico das integrações.
 
 ---
 
-## 4. Ambiente de Execução
+## 3) Visão de Processos
 
-### 4.1 Plataformas Suportadas
+Cada fluxo abaixo deve ser representado com um diagrama de sequência.
 
-| Plataforma | Sistema Operacional | Versão Mínima |
-|------------|---------------------|---------------|
-| **iOS** | iOS | 13.0+ |
-| **Android** | Android | API 21+ (5.0 Lollipop) |
+### 3.1 Login
 
-### 4.2 Runtime
+![Processo de login](./image/processo-login.png)
 
-| Componente | Ambiente |
-|------------|----------|
-| **Código JavaScript** | Hermes Engine (React Native) |
-| **Código Nativo** | iOS: Swift/Objective-C, Android: Kotlin/Java |
-| **Bridge** | React Native New Architecture (Fabric) |
+**Descrição visual:**  
+O fluxo inicia na tela de login, passa pelo ViewModel e chega ao UseCase de autenticação.  
+O UseCase valida credenciais, autentica no Firebase Auth e busca o perfil no Firestore.  
+Com o usuário carregado, o ViewModel atualiza o estado e a View navega para a área logada.
 
-### 4.3 Ciclo de Vida
+### 3.2 Solicitar Consulta (Paciente)
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                    INICIALIZAÇÃO                           │
-│                                                            │
-│  1. App inicia                                             │
-│  2. DI Container monta dependências                        │
-│  3. Verifica sessão ativa com Provedor de Autenticação     │
-│  4. Redireciona para tela apropriada                       │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────┐
-│                    EXECUÇÃO ATIVA                          │
-│                                                            │
-│  • Views renderizam estado do ViewModel                    │
-│  • ViewModel executa UseCases                              │
-│  • UseCases chamam Repositórios (via interface)            │
-│  • Infraestrutura comunica com serviços externos           │
-│  • Listeners recebem atualizações em tempo real            │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────┐
-│                    BACKGROUND                              │
-│                                                            │
-│  • Notificações locais continuam agendadas                 │
-│  • Listeners pausados (reconectam ao voltar)               │
-│  • Sessão mantida (token armazenado)                       │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
-```
+![Processo de solicitação de consulta](./image/processo-solicitar-consulta.png)
+
+**Descrição visual:**  
+O paciente carrega os horários disponíveis: o ViewModel chama o UseCase de disponibilidade,  
+que consulta o repositório por data e filtra slots válidos (dia útil, horário futuro, sem conflito).  
+Ao solicitar, o UseCase cria a consulta no Firestore com status **pending**  
+e a View exibe o feedback de solicitação enviada.
+
+### 3.3 Aceitar Consulta (Nutricionista)
+
+![Processo de aceite de consulta](./image/processo_aceitar_consulta.png)
+
+**Descrição visual:**  
+O aceite parte da lista de pendências. O UseCase muda o status para **accepted**,  
+sincroniza o evento no calendário e dispara push para o paciente via Supabase Edge + Expo Push.  
+O ViewModel recebe o sucesso e atualiza a tela.
+
+### 3.4 Cancelar e Reativar Consulta
+
+![Processo de cancelamento/reativação](./image/processo_cancelar_reativar.png)
+
+**Descrição visual:**  
+No cancelamento, o UseCase altera o status para **cancelled**, remove o evento do calendário  
+e envia notificação. Na reativação, o UseCase valida conflitos, aceita a consulta,  
+cria o evento novamente e notifica as partes envolvidas.
+
+### 3.5 Resolução de Conflitos
+
+![Processo de resolução de conflitos](./image/processo_conflitos.png)
+
+**Descrição visual:**  
+Quando há conflito de horário, a tela carrega as consultas conflitantes via UseCase.  
+Após a escolha, o UseCase resolve: mantém **accepted** a selecionada e cancela as demais,  
+registrando as mudanças no Firestore e retornando sucesso para a View.
 
 ---
 
-## 5. Comunicação com Serviços Externos
+## 4) Diagrama de Classes (Domínio + Infra)
 
-### 5.1 Padrão de Comunicação
+![Diagrama de classes](./image/diagrama_classes.png)
 
-```
-┌─────────────┐         ┌─────────────┐         ┌─────────────┐
-│   UseCase   │────────▶│ Repository  │────────▶│  Serviço    │
-│             │ chamada │  (Infra)    │  HTTPS  │  Remoto     │
-│             │◀────────│             │◀────────│             │
-│             │ resposta│             │  JSON   │             │
-└─────────────┘         └─────────────┘         └─────────────┘
-```
-
-### 5.2 Tipos de Comunicação
-
-| Tipo | Direção | Uso |
-|------|---------|-----|
-| **Request/Response** | Cliente → Servidor → Cliente | CRUD de dados |
-| **Real-time Listeners** | Servidor → Cliente (push) | Atualizações de status |
-| **Local** | App ↔ Dispositivo | Calendário, Notificações |
-
-### 5.3 Contratos de Serviço
-
-#### Provedor de Autenticação
-
-```typescript
-interface IAuthService {
-  login(email: string, password: string): Promise<AuthResult>;
-  register(email: string, password: string): Promise<AuthResult>;
-  logout(): Promise<void>;
-  getCurrentUser(): Promise<User | null>;
-  onAuthStateChanged(callback: (user: User | null) => void): Unsubscribe;
-}
-```
-
-#### Provedor de Persistência - Usuários
-
-```typescript
-interface IUserRepository {
-  getById(id: string): Promise<User | null>;
-  create(user: User): Promise<void>;
-  getByEmail(email: string): Promise<User | null>;
-}
-```
-
-#### Provedor de Persistência - Consultas
-
-```typescript
-interface IAppointmentRepository {
-  create(appointment: Appointment): Promise<void>;
-  getById(id: string): Promise<Appointment | null>;
-  listByPatient(patientId: string): Promise<Appointment[]>;
-  listByNutritionist(nutritionistId: string): Promise<Appointment[]>;
-  listByDateAndStatus(date: string, status: AppointmentStatus): Promise<Appointment[]>;
-  updateStatus(id: string, status: AppointmentStatus): Promise<void>;
-  onPatientAppointmentsChanged(patientId: string, callback: (appointments: Appointment[]) => void): Unsubscribe;
-  onNutritionistAppointmentsChanged(nutritionistId: string, callback: (appointments: Appointment[]) => void): Unsubscribe;
-}
-```
-
-#### Provedor de Calendário
-
-```typescript
-interface ICalendarProvider {
-  requestPermission(): Promise<boolean>;
-  addEvent(event: CalendarEvent): Promise<string>; // retorna eventId
-  removeEvent(eventId: string): Promise<void>;
-  hasPermission(): Promise<boolean>;
-}
-```
-
-#### Provedor de Notificações
-
-```typescript
-interface INotificationProvider {
-  requestPermission(): Promise<boolean>;
-  scheduleReminder(reminder: ReminderInput): Promise<string>; // retorna notificationId
-  cancelReminder(notificationId: string): Promise<void>;
-  hasPermission(): Promise<boolean>;
-}
-```
+**Descrição visual:**  
+Apresenta as entidades centrais (User, Appointment, TimeSlot) e o enum de estados.  
+Mostra os contratos (interfaces) e as implementações na Infra (Firebase, Calendar, Push),  
+e evidencia onde ficam os IDs de eventos do calendário e os tokens de push.
 
 ---
 
-## 6. Diagrama de Deployment
+## 5) Diagrama de Interfaces (Contratos)
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                                                                     │
-│                         AMBIENTE DE PRODUÇÃO                        │
-│                                                                     │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │                    DISPOSITIVOS MÓVEIS                        │  │
-│  │                                                               │  │
-│  │   ┌─────────────┐                      ┌─────────────┐       │  │
-│  │   │   iPhone    │                      │   Android   │       │  │
-│  │   │             │                      │             │       │  │
-│  │   │ ┌─────────┐ │                      │ ┌─────────┐ │       │  │
-│  │   │ │  Vitta  │ │                      │ │  Vitta  │ │       │  │
-│  │   │ │   App   │ │                      │ │   App   │ │       │  │
-│  │   │ └─────────┘ │                      │ └─────────┘ │       │  │
-│  │   └──────┬──────┘                      └──────┬──────┘       │  │
-│  │          │                                    │               │  │
-│  └──────────┼────────────────────────────────────┼───────────────┘  │
-│             │              INTERNET              │                   │
-│             └────────────────┬───────────────────┘                   │
-│                              │                                       │
-│  ┌───────────────────────────┼───────────────────────────────────┐  │
-│  │                    NUVEM (BaaS)                               │  │
-│  │                           │                                   │  │
-│  │   ┌───────────────────────┴───────────────────────────┐      │  │
-│  │   │              PROVEDOR DE BACKEND                  │      │  │
-│  │   │                                                   │      │  │
-│  │   │  ┌─────────────────┐  ┌─────────────────┐        │      │  │
-│  │   │  │  Autenticação   │  │   Banco NoSQL   │        │      │  │
-│  │   │  │                 │  │                 │        │      │  │
-│  │   │  │ • Identidade    │  │ • users/        │        │      │  │
-│  │   │  │ • Tokens JWT    │  │ • appointments/ │        │      │  │
-│  │   │  │ • Sessões       │  │ • Índices       │        │      │  │
-│  │   │  └─────────────────┘  └─────────────────┘        │      │  │
-│  │   │                                                   │      │  │
-│  │   └───────────────────────────────────────────────────┘      │  │
-│  │                                                               │  │
-│  └───────────────────────────────────────────────────────────────┘  │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Diagrama de interfaces](./image/diagrama_interfaces.png)
+
+**Descrição visual:**  
+Expõe quais UseCases dependem de quais interfaces e quem implementa cada contrato na Infra.  
+O objetivo é deixar clara a inversão de dependências: regras de negócio conhecem somente abstrações.
 
 ---
 
-## 7. Segurança
+## 6) Diagrama de Pacotes
 
-### 7.1 Camadas de Segurança
+![Diagrama de pacotes](./image/diagrama_pacotes.png)
 
-| Camada | Mecanismo |
-|--------|-----------|
-| **Transporte** | HTTPS/TLS para todas as comunicações |
-| **Autenticação** | Tokens JWT com expiração |
-| **Autorização** | Regras no provedor de persistência |
-| **Dados** | Isolamento por usuário |
-
-### 7.2 Regras de Acesso
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   REGRAS DE AUTORIZAÇÃO                     │
-│                                                             │
-│  Paciente:                                                  │
-│  ├─ Lê: apenas suas próprias consultas                     │
-│  ├─ Cria: consultas onde é o patientId                     │
-│  ├─ Atualiza: cancelar suas consultas (pending/accepted)   │
-│  └─ Deleta: nunca                                          │
-│                                                             │
-│  Nutricionista:                                             │
-│  ├─ Lê: todas as consultas                                 │
-│  ├─ Cria: nunca (apenas paciente solicita)                 │
-│  ├─ Atualiza: status de qualquer consulta                  │
-│  └─ Deleta: nunca                                          │
-│                                                             │
-│  Sistema:                                                   │
-│  ├─ Valida conflitos de horário                            │
-│  ├─ Mantém integridade referencial                         │
-│  └─ Registra timestamps automáticos                        │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+**Descrição visual:**  
+Organiza o código por pacotes (app, view, viewmodel, usecase, model, infra, di, tests)  
+e mostra a direção das dependências entre eles, com o DI como ponto de composição.
 
 ---
 
-## 8. Escalabilidade e Resiliência
+## 7) Diagrama de Estados (Consulta)
 
-### 8.1 Características
+![Diagrama de estados](./image/diagrama_estados.png)
 
-| Aspecto | Abordagem |
-|---------|-----------|
-| **Escalabilidade** | Serverless (provedor gerencia) |
-| **Disponibilidade** | SLA do provedor de backend |
-| **Latência** | Listeners em tempo real |
-| **Offline** | Não suportado no MVP (futuro) |
-
-### 8.2 Pontos de Falha
-
-| Componente | Impacto se falhar | Mitigação |
-|------------|-------------------|-----------|
-| **Rede** | App não funciona | Mensagem de erro + retry |
-| **Provedor Auth** | Não faz login | Sessão em cache |
-| **Provedor DB** | Não carrega dados | Loading + retry |
-| **Calendário** | Não sincroniza | Funcionalidade degradada |
-| **Notificações** | Não lembra | Funcionalidade degradada |
+**Descrição visual:**  
+Define o ciclo de vida de uma consulta: **pending → accepted/rejected**,  
+**accepted → cancelled**, e reativação de **cancelled → accepted** mediante verificação de conflito.
 
 ---
 
-## 9. Documentação Relacionada
+## 8) Visão de Dependências
 
-- [Arquitetura (ARQUITETURA.md)](./ARQUITETURA.md) - Padrões de código e camadas
-- [ERD (ERD.md)](./ERD.md) - Modelo de dados
-- [Sprints (SPRINTS.md)](./SPRINTS.md) - Planejamento de desenvolvimento
-- [Requisitos Funcionais (RF.md)](./RF.md) - O que o sistema faz
-- [Requisitos Não Funcionais (RNF.md)](./RNF.md) - Como o sistema se comporta
+![Visão de dependências](./image/visao_dependencias.png)
+
+**Descrição visual:**  
+Resume o empilhamento de camadas: View → ViewModel → UseCase → Model,  
+com a Infra implementando interfaces do Model.  
+Serve para reforçar o fluxo de dependências e o isolamento das regras de negócio.

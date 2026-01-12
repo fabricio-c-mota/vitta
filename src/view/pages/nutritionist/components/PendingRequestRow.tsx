@@ -25,15 +25,15 @@ export default function PendingRequestRow({ item, processing, onAccept, onReject
         <View style={styles.row}>
             <View style={styles.avatar}>
                 {initials.length >= 2 ? (
-                    <Text style={styles.avatarText}>{initials}</Text>
+                    <Text style={styles.avatarText} maxFontSizeMultiplier={1.2}>{initials}</Text>
                 ) : (
                     <Feather name="user" size={22} color={colors.textSecondary} />
                 )}
             </View>
 
             <View style={styles.rowInfo}>
-                <Text style={styles.patientName}>{item.patientName}</Text>
-                <Text style={styles.subtitle}>
+                <Text style={styles.patientName} maxFontSizeMultiplier={1.2}>{item.patientName}</Text>
+                <Text style={styles.subtitle} maxFontSizeMultiplier={1.2}>
                     {item.dateFormatted}, {item.timeStart}
                 </Text>
             </View>

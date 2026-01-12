@@ -1,18 +1,19 @@
 # Vitta - App de Agendamento Nutricional
 
-Sistema de agendamento de consultas nutricionais desenvolvido com React Native + Expo Router + Firebase.
+Sistema de agendamento de consultas nutricionais desenvolvido com React Native + Expo Router + Firebase, com notificações push via Supabase e integração com calendário nativo.
 
 ## Sobre o Projeto
 
-O Vitta é um aplicativo que facilita o agendamento de consultas entre pacientes e nutricionistas, oferecendo:
+O Vitta facilita o agendamento de consultas entre pacientes e nutricionistas, oferecendo:
 
-- **Para Pacientes**: Visualização de horários disponíveis, solicitação de consultas, acompanhamento de status
-- **Para Nutricionistas**: Gestão de solicitações, confirmação/recusa de consultas, visualização da agenda
-- **Integrações**: Calendário nativo, notificações de lembrete
+- **Para Pacientes**: Visualização de horários disponíveis, solicitação de consultas, acompanhamento de status, cancelamento
+- **Para Nutricionistas**: Gestão de solicitações, confirmação/recusa, agenda diária, cancelamento e reativação
+- **Conflitos**: Tela para resolver conflitos de horário (apenas consultas canceladas)
+- **Integrações**: Calendário nativo, notificações push e lembretes do calendário
 
 ## Arquitetura
 
-O projeto segue o padrão **MVVM simplificado** com separação clara de responsabilidades:
+O projeto segue o padrão **MVVM Sofisticado** com separação clara de responsabilidades:
 
 ```
 src/
@@ -30,7 +31,7 @@ src/
 ├── infra/            # Implementações concretas
 │   ├── firebase/     # Firebase Auth + Firestore
 │   ├── calendar/     # Expo Calendar
-│   └── notifications/# Expo Notifications
+│   └── notifications/# Expo Notifications + Supabase Edge
 └── di/               # Injeção de dependências
 ```
 
@@ -41,7 +42,9 @@ src/
 - Node.js 18+
 - npm ou yarn
 - Expo CLI
-- Conta Firebase configurada
+- Xcode (iOS) e/ou Android Studio (Android) para builds nativos
+- Conta Firebase configurada (Auth + Firestore)
+- Conta Supabase configurada (push via Edge Function)
 
 ### Instalação
 
@@ -51,14 +54,35 @@ src/
    npm install
    ```
 
-3. Configure o Firebase:
-   - Crie um projeto no Firebase Console
-   - Adicione as configurações em `src/infra/firebase/config.ts`
+3. Configure as variáveis de ambiente:
+   - Copie `.env` de exemplo (ou crie o arquivo)
+   - Preencha as chaves:
+     - `EXPO_PUBLIC_FIREBASE_API_KEY`
+     - `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN`
+     - `EXPO_PUBLIC_FIREBASE_PROJECT_ID`
+     - `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET`
+     - `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+     - `EXPO_PUBLIC_FIREBASE_APP_ID`
+     - `EXPO_PUBLIC_SUPABASE_URL`
+     - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
 4. Inicie o app:
    ```bash
    npm start
    ```
+
+### Builds nativos (necessário para push e calendário)
+
+- iOS (debug):
+  ```bash
+  npx expo run:ios
+  ```
+- Android (debug):
+  ```bash
+  npx expo run:android
+  ```
+
+> **Importante:** notificações push **não funcionam no Expo Go**. É necessário build nativo (dev ou release).
 
 ## Documentação
 
@@ -70,6 +94,8 @@ Toda a documentação do projeto está em `/docs`:
 - **UC.md**: Casos de Uso
 - **TELAS.md**: Especificação de interfaces
 - **HUN.md, HUP.md, HUS.md**: Histórias de Usuário
+- **ERD.md**: Modelo de entidades e relacionamentos
+- **COMPONENTES.md**: Diagramas e comunicação entre camadas
 
 ## Testes
 
@@ -99,33 +125,10 @@ npm run test:coverage # Cobertura
 - **Framework**: React Native + Expo
 - **Roteamento**: Expo Router (file-based)
 - **Backend**: Firebase (Auth + Firestore)
-- **Notificações**: Expo Notifications
+- **Notificações**: Expo Notifications + Supabase Edge Function
 - **Calendário**: Expo Calendar
 - **Linguagem**: TypeScript
 - **Testes**: Jest + React Native Testing Library
-
-## 📝 Status do Projeto
-
-🚧 Em desenvolvimento - Estrutura inicial configurada
-
-### Concluído
-✅ Estrutura de pastas MVVM criada  
-✅ Expo Router configurado (roteamento básico)  
-✅ Documentação completa em `/docs`  
-✅ Path aliases configurados (`@/*` → `./src/*`)  
-✅ TypeScript strict mode habilitado
-
-### Estado Atual
-- Apenas roteamento básico implementado (sem componentes visuais)
-- Estrutura de pastas seguindo arquitetura MVVM
-- Pronto para iniciar implementação das camadas
-
-### Próximas Etapas
-- [ ] Implementar camada de domínio (entidades e interfaces)
-- [ ] Configurar Firebase
-- [ ] Implementar casos de uso
-- [ ] Desenvolver ViewModels
-- [ ] Criar telas e componentes
 
 ## Perfis de Usuário
 
@@ -135,4 +138,3 @@ npm run test:coverage # Cobertura
 ## Licença
 
 Este projeto é privado e destinado a uso acadêmico/profissional.
-

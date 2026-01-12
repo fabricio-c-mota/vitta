@@ -15,8 +15,8 @@ export default function AppointmentDetailsHeader({ status, date, timeStart }: Pr
     return (
         <View>
             <StatusBadge status={status} variant="filled" />
-            <Text style={styles.bigTitle}>{formatDayText(date)}</Text>
-            <Text style={styles.bigTime}>{timeStart}</Text>
+            <Text style={styles.bigTitle} maxFontSizeMultiplier={1.2}>{formatDayText(date)}</Text>
+            <Text style={styles.bigTime} maxFontSizeMultiplier={1.2}>{timeStart}</Text>
         </View>
     );
 }

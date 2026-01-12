@@ -13,6 +13,7 @@ type Props = {
     pillWidth: number;
     gap: number;
     onSelectTime: (time: string) => void;
+    paddingBottom?: number;
 };
 
 export default function ScheduleSlotsSection({
@@ -24,6 +25,7 @@ export default function ScheduleSlotsSection({
     pillWidth,
     gap,
     onSelectTime,
+    paddingBottom = 140,
 }: Props) {
     if (!selectedDate) {
         return (
@@ -37,7 +39,7 @@ export default function ScheduleSlotsSection({
 
     return (
         <View>
-            <Text style={styles.sectionTitle}>{selectedDateFormatted}</Text>
+            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.2}>{selectedDateFormatted}</Text>
             {loading ? (
                 <View style={styles.centered}>
                     <ActivityIndicator size="small" color={colors.primary} />
@@ -54,7 +56,7 @@ export default function ScheduleSlotsSection({
                     keyExtractor={(item) => item}
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.timesContent}
+                    contentContainerStyle={[styles.timesContent, { paddingBottom }]}
                     ItemSeparatorComponent={() => <View style={{ width: gap }} />}
                     renderItem={({ item }) => (
                         <View style={{ width: pillWidth }}>
@@ -81,7 +83,6 @@ const styles = StyleSheet.create({
     centered: { paddingVertical: spacing.xl, alignItems: "center", justifyContent: "center" },
     timesContent: {
         paddingTop: spacing.xs,
-        paddingBottom: 140,
         paddingHorizontal: spacing.sm,
     },
 });

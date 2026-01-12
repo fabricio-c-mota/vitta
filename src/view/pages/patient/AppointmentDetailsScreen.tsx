@@ -86,9 +86,14 @@ export default function AppointmentDetailsScreen() {
     }
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
             <ScreenHeader title="Detalhes da Consulta" />
-            <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 140 }}>
+            <ScrollView
+                style={styles.content}
+                contentContainerStyle={{
+                    paddingBottom: canCancel ? 120 + Math.max(insets.bottom, spacing.lg) : spacing.lg,
+                }}
+            >
                 <AppointmentDetailsHeader
                     status={appointment.status}
                     date={appointment.date}
@@ -100,11 +105,12 @@ export default function AppointmentDetailsScreen() {
                 <AppointmentDetailsNoteCard />
             </ScrollView>
 
-            <AppointmentDetailsActionBar
-                visible={!!canCancel}
-                processing={processing}
-                onCancel={handleCancel}
-            />
+            {canCancel && (
+                <AppointmentDetailsActionBar
+                    processing={processing}
+                    onCancel={handleCancel}
+                />
+            )}
             <AppointmentDetailsModals
                 confirmOpen={cancelModalOpen}
                 successMessage={successMessage}

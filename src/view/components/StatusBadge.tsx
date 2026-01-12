@@ -41,7 +41,7 @@ export default function StatusBadge({ status, variant = "filled" }: Props) {
 
     return (
         <View style={[styles.badge, { backgroundColor: s.bg }]}>
-            <Text style={[styles.text, { color: s.text }]}>{s.label}</Text>
+            <Text style={[styles.text, { color: s.text }]} maxFontSizeMultiplier={1.2}>{s.label}</Text>
         </View>
     );
 }

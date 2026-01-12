@@ -44,7 +44,7 @@ export default function PendingRequestsScreen() {
 
     if (loading) {
         return (
-            <View style={[styles.container, { paddingTop: insets.top }]}>
+            <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
                 <ScreenHeader title="Solicitações Pendentes" />
                 <View style={styles.centered}>
                     <ActivityIndicator size="large" color={colors.primary} />
@@ -55,7 +55,7 @@ export default function PendingRequestsScreen() {
 
     if (showError && error) {
         return (
-            <View style={[styles.container, { paddingTop: insets.top }]}>
+            <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
                 <ScreenHeader title="Solicitações Pendentes" />
                 <ErrorScreen
                     message={error}
@@ -69,7 +69,7 @@ export default function PendingRequestsScreen() {
     }
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
             <ScreenHeader title="Solicitações Pendentes" />
 
             {pendingAppointments.length === 0 ? (

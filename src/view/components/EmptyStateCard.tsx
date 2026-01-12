@@ -20,7 +20,7 @@ export default function EmptyStateCard({
         <Feather name={icon} size={28} color={colors.primary} />
       </View>
 
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title} maxFontSizeMultiplier={1.2}>{title}</Text>
 
       {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
     </View>
@@ -37,6 +37,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.03)",
+    marginBottom: spacing.lg,
   },
 
   iconCircle: {

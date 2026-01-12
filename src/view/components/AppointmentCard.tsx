@@ -25,7 +25,7 @@ export default function AppointmentCard({ date, timeStart, status, onPress }: Pr
     return (
         <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={styles.card}>
             <View style={styles.topRow}>
-                <Text style={styles.dateText}>{formatDate(date, timeStart)}</Text>
+                <Text style={styles.dateText} maxFontSizeMultiplier={1.2}>{formatDate(date, timeStart)}</Text>
                 <Feather name="chevron-right" size={22} color={colors.textSecondary} />
             </View>
             <StatusBadge status={status} />

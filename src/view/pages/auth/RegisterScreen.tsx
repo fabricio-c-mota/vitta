@@ -74,7 +74,7 @@ export default function RegisterScreen() {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <View style={styles.container}>
+                <View style={[styles.container, { paddingBottom: insets.bottom }]}>
                     <ScrollView
                         contentContainerStyle={[
                             styles.scrollContent,
@@ -90,7 +90,7 @@ export default function RegisterScreen() {
                             />
                         </View>
 
-                        <Text style={styles.title}>Crie sua conta</Text>
+                        <Text style={styles.title} maxFontSizeMultiplier={1.2}>Crie sua conta</Text>
                         <Text style={styles.subtitle}>Preencha os dados para se cadastrar</Text>
 
                         <RegisterFormFields
@@ -119,13 +119,13 @@ export default function RegisterScreen() {
                             {loading ? (
                                 <ActivityIndicator color={colors.background} />
                             ) : (
-                                <Text style={styles.signUpButtonText}>Criar conta</Text>
+                                <Text style={styles.signUpButtonText} maxFontSizeMultiplier={1.2}>Criar conta</Text>
                             )}
                         </TouchableOpacity>
                         <View style={styles.footer}>
                             <Text style={styles.footerText}>
                                 Já tem uma conta?
-                                <Text style={styles.footerHighlight} onPress={goToLogin}> Entrar</Text>
+                                <Text style={styles.footerHighlight} maxFontSizeMultiplier={1.2} onPress={goToLogin}> Entrar</Text>
                             </Text>
                         </View>
                     </ScrollView>

@@ -39,13 +39,13 @@ export default function PatientHomeScreen() {
     }, [error]);
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
+        <View style={[styles.container, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom }]}>
             <View style={styles.header}>
                 <Image
                     source={require("../../assets/images/image.png")}
                     style={styles.avatar}
                 />
-                <Text style={styles.headerText}>Olá, {user?.name || user?.email || "Paciente"}!</Text>
+                <Text style={styles.headerText} maxFontSizeMultiplier={1.2}>Olá, {user?.name || user?.email || "Paciente"}!</Text>
                 <LogoutButton onPress={handleLogout} />
             </View>
 
@@ -57,7 +57,7 @@ export default function PatientHomeScreen() {
                         </View>
 
                         <View style={styles.cardTextWrapper}>
-                            <Text style={styles.cardTitle}>Solicitar Nova Consulta</Text>
+                            <Text style={styles.cardTitle} maxFontSizeMultiplier={1.2}>Solicitar Nova Consulta</Text>
                             <Text style={styles.cardSubtitle}>
                                 Agende seu próximo encontro para cuidarmos da sua saúde.
                             </Text>
@@ -65,7 +65,7 @@ export default function PatientHomeScreen() {
                     </View>
 
                     <TouchableOpacity style={styles.primaryButton} onPress={goToSchedule}>
-                        <Text style={styles.primaryButtonText}>Agendar agora</Text>
+                        <Text style={styles.primaryButtonText} maxFontSizeMultiplier={1.2}>Agendar agora</Text>
                     </TouchableOpacity>
                 </HomeCard>
 
@@ -76,7 +76,7 @@ export default function PatientHomeScreen() {
                         </View>
 
                         <View style={styles.cardTextWrapper}>
-                            <Text style={styles.cardTitle}>Minhas Consultas</Text>
+                            <Text style={styles.cardTitle} maxFontSizeMultiplier={1.2}>Minhas Consultas</Text>
                             <Text style={styles.cardSubtitle}>
                                 Veja suas consultas agendadas e acompanhe o status.
                             </Text>
@@ -84,7 +84,7 @@ export default function PatientHomeScreen() {
                     </View>
 
                     <TouchableOpacity style={styles.secondaryButton} onPress={goToAppointments}>
-                        <Text style={styles.secondaryButtonText}>Ver todas</Text>
+                        <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={1.2}>Ver todas</Text>
                     </TouchableOpacity>
                 </HomeCard>
             </View>

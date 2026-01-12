@@ -6,7 +6,7 @@ Escopo: Entregas incrementais, priorização e cronograma de desenvolvimento.
 # Planejamento de Sprints - Vitta
 
 App de Agendamento de Consultas Nutricionais  
-React Native + Expo + Firebase
+React Native + Expo + Firebase + Supabase (push)
 
 ---
 
@@ -29,7 +29,7 @@ React Native + Expo + Firebase
 
 Este documento define o planejamento de desenvolvimento em sprints, priorizando entregas incrementais e funcionais. A estratégia segue um modelo incremental onde cada sprint entrega valor de negócio tangível, culminando em um MVP funcional.
 
-As integrações complexas (notificações push e calendário nativo) serão implementadas com implementações stub, permitindo que o app seja 100% funcional enquanto mantém a arquitetura preparada para futuras integrações reais.
+As integrações de notificações push e calendário nativo (Supabase Edge Functions + Expo Notifications/Calendar), exigem build nativo para funcionamento fora do Metro.
 
 ---
 
@@ -41,11 +41,11 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 | 2 | 1-2 sem | Gestão Paciente | Solicitações de Consulta | Essencial |
 | 3 | 1-2 sem | Gestão Nutricionista | Aceitação/Recusa de Consultas | Essencial |
 | 4 | 1 sem | Cancelamento e UX | Refinamentos Funcionais | Essencial |
-| 5 | 3-5 dias | Integrações Stub | Arquitetura Futura | Opcional |
+| 5 | 3-5 dias | Integrações Reais | Calendário + Push | Essencial |
 | 6 | 3-5 dias | Polimento Final | Qualidade Produção | Essencial |
 
 **Duração Total Estimada:** 5-8 semanas  
-**MVP Funcional:** Sprints 1-4 (4-6 semanas)
+**MVP Funcional:** Sprints 1-5 (4-7 semanas)
 
 ---
 
@@ -90,6 +90,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 - [x] `SplashScreen.tsx`
 - [x] `LoginScreen.tsx`
 - [x] `RegisterScreen.tsx`
+- [x] `ForgotPasswordScreen.tsx`
 - [x] `patient/PatientHomeScreen.tsx`
 - [x] `nutritionist/NutritionistHomeScreen.tsx`
 
@@ -122,6 +123,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 - [x] Paciente consegue se registrar com nome, email e senha
 - [x] Paciente e nutricionista fazem login com credenciais válidas
+- [x] Usuário consegue solicitar recuperação de senha por e-mail
 - [x] Sistema diferencia perfis e redireciona corretamente
 - [x] Nutricionista já existe no Firebase (cadastrada manualmente)
 - [x] Mensagens de erro são exibidas de forma amigável
@@ -167,7 +169,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
   - [x] Slots: 9-11h, 11-13h, 13-15h, 14-16h
   - [x] Filtrar fins de semana
   - [x] Filtrar horários já ocupados (consultas aceitas)
-- [x] `RequestAppointmentUseCase` (validar slot disponível + capturar observações opcionais do paciente + criar)
+- [x] `RequestAppointmentUseCase` (validar slot disponível + criar solicitação)
 - [x] `ListPatientAppointmentsUseCase` (buscar por patientId, ordenar por data)
 - [x] `GetAppointmentDetailsUseCase` (buscar por id)
 
@@ -182,7 +184,6 @@ As integrações complexas (notificações push e calendário nativo) serão imp
   - [x] Integrar `react-native-calendars`
   - [x] Marcar dias úteis disponíveis
   - [x] Listar slots do dia selecionado
-  - [x] Text input opcional para observações (capturadas do paciente)
   - [x] Botão "Solicitar Consulta"
 - [x] Tela: `MyAppointmentsScreen.tsx` (lista de consultas)
   - [x] Cards com status colorido
@@ -259,8 +260,8 @@ As integrações complexas (notificações push e calendário nativo) serão imp
   - Pull-to-refresh
   - Atualização em tempo real
 - [x] Tela: `AgendaScreen.tsx`
-  - Calendário com consultas aceitas
-  - Dias com consulta marcados (verde)
+  - Calendário com consultas aceitas e canceladas
+  - Dias com consulta marcados (indicador visual)
   - Lista de consultas do dia selecionado
   - Filtros: Todos, Esta Semana, Hoje
 - [x] Tela: `NutritionistAppointmentDetailsScreen.tsx`
@@ -294,7 +295,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 - Nutricionista recusa consulta (status → "rejected")
 - Sistema impede aceitar 2 consultas no mesmo horário
 - Mensagem de erro clara se houver conflito
-- Agenda mostra apenas consultas aceitas em calendário
+- Agenda mostra consultas aceitas e canceladas em calendário
 - Paciente vê atualização de status em tempo real
 - Dados atualizados automaticamente (Firebase listeners)
 
@@ -320,7 +321,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 #### Casos de Uso
 - [x] `CancelAppointmentUseCase` (paciente ou nutricionista)
-  - Validar que consulta está "accepted" ou "pending"
+  - Validar que consulta está "accepted" ou "pending" (paciente) e "accepted" (nutricionista)
   - Atualizar status para "cancelled"
 - [x] `ReactivateAppointmentUseCase` (nutricionista apenas)
   - Validar que consulta está "cancelled"
@@ -349,9 +350,9 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 - [x] Rotas de detalhes e retorno para listas após ações
 
 #### Componentes Reutilizáveis
-- [x] `ConfirmationModal` (título, mensagem, ações)
-- [x] `ErrorMessage` (mensagem + retry)
-- [x] `EmptyState` (mensagem quando lista vazia)
+- [x] `ConfirmActionModal` (título, mensagem, ações)
+- [x] `AlertModal` (mensagem + ação)
+- [x] `EmptyStateCard` (mensagem quando lista vazia)
 - [x] `LoadingIndicator` (spinner centralizado)
 
 #### Validações
@@ -367,7 +368,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 ### Critérios de Aceitação
 
-- Paciente cancela consulta aceita (status → "cancelled")
+- Paciente cancela consulta pendente ou aceita (status → "cancelled")
 - Nutricionista cancela consulta aceita
 - Nutricionista reativa consulta cancelada (verifica conflitos)
 - Modais de confirmação antes de ações críticas
@@ -384,82 +385,71 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 ---
 
-## SPRINT 5: Integrações Stub (Arquitetura Futura)
+## SPRINT 5: Integrações Reais (Calendário + Push)
 
 **Duração:** 3-5 dias  
-**Objetivo:** Preparar arquitetura para integrações futuras com implementações stub
+**Objetivo:** Entregar notificações push reais e sincronização com calendário nativo
 
 ### Histórias de Usuário Relacionadas
 
-- [ ] [P06](./HUP.md) - Paciente: Adicionar consulta ao calendário do celular (stub)
-- [ ] [P07](./HUP.md) - Paciente: Receber notificações de lembrete (stub)
-- [ ] [N05](./HUN.md) - Nutricionista: Adicionar consultas ao calendário (stub)
-- [ ] [S03](./HUS.md) - Sistema: Agendar notificações locais (stub)
+- [x] [P06](./HUP.md) - Paciente: Adicionar consulta ao calendário do celular
+- [x] [P07](./HUP.md) - Paciente: Receber notificações quando a consulta mudar
+- [x] [N05](./HUN.md) - Nutricionista: Adicionar consultas ao calendário
+- [x] [N08](./HUN.md) - Nutricionista: Receber notificações sobre solicitações
+- [x] [S03](./HUS.md) - Sistema: Enviar notificações push de atualização
 
 ### Entregas
 
 #### Domínio (Model)
-- [ ] Interface `INotificationProvider`
-  - `scheduleReminder(appointmentId, date, time): Promise<void>`
-  - `cancelReminder(appointmentId): Promise<void>`
-  - `sendStatusUpdate(userId, message): Promise<void>`
-- [ ] Interface `ICalendarProvider`
-  - `addEvent(title, date, time, duration): Promise<string>`
-  - `removeEvent(eventId): Promise<void>`
-  - `requestPermission(): Promise<boolean>`
+- [x] Interface `ICalendarService`
+- [x] Interface `IPushNotificationService`
+- [x] Interface `IPushNotificationSender`
+- [x] Campos `calendarEventIdPatient` e `calendarEventIdNutritionist` na consulta
+- [x] Lista de `pushTokens` no usuário
 
-#### Infraestrutura - Stubs
-- [ ] `StubNotificationProvider` (implementa `INotificationProvider`)
-  - Apenas loga no console: `"[Stub] Notificação: lembrete agendado para..."`
-  - Simula sucesso sempre
-- [ ] `StubCalendarProvider` (implementa `ICalendarProvider`)
-  - Apenas loga no console: `"[Stub] Calendário: evento criado para..."`
-  - Retorna ID fake
-  - Simula permissão concedida
+#### Infraestrutura
+- [x] `CalendarService` (Expo Calendar)
+  - Criação/remoção de eventos no calendário
+  - Lembrete padrão de 24h antes
+- [x] `PushNotificationService` (Expo Notifications)
+  - Permissões, token, canal Android
+- [x] `PushNotificationSender` (Supabase Edge Function → Expo Push API)
 
 #### Integração nos Use Cases
-- [ ] `AcceptAppointmentUseCase` → chamar `notificationProvider.scheduleReminder()`
-- [ ] `AcceptAppointmentUseCase` → chamar `calendarProvider.addEvent()`
-- [ ] `CancelAppointmentUseCase` → chamar `notificationProvider.cancelReminder()`
-- [ ] `CancelAppointmentUseCase` → chamar `calendarProvider.removeEvent()`
+- [x] `AppointmentCalendarSyncUseCase` (cria/atualiza/remove evento)
+- [x] `AppointmentPushNotificationUseCase` (solicitação, aceite, recusa, cancelamento, reativação)
 
 #### View
-- [ ] Ajustes de UX para permissão de notificações/calendário (mensagens e erros)
+- [x] Tela de permissão de calendário (bloqueio até conceder)
+- [x] Tela de permissão de notificações (bloqueio até conceder)
 
 #### Components
-- [ ] Componentes de aviso/erro para permissões negadas
+- [x] Layout e mensagens de orientação para permissões
 
 #### Navegação
-- [ ] Fluxo de fallback caso permissões sejam recusadas
+- [x] Fluxo após login: calendário → notificações → home
 
 #### DI Container
-- [ ] Registrar `StubNotificationProvider` como implementação de `INotificationProvider`
-- [ ] Registrar `StubCalendarProvider` como implementação de `ICalendarProvider`
-- [ ] Documentar como trocar stub por implementação real
+- [x] Registrar serviços reais (calendar + push) no DI
 
 #### Documentação
-- [ ] Guia: "Como Implementar Notificações Reais" (expo-notifications)
-- [ ] Guia: "Como Implementar Calendário Real" (expo-calendar)
-- [ ] Atualizar ARQUITETURA.md com seção de stubs
+- [x] Atualizar arquitetura e requisitos para refletir integrações reais
 
 #### Testes
-- [ ] Testes: Use Cases com mocks de providers
-- [ ] Verificar que stubs são chamados corretamente
+- [x] Testes unitários para serviços e use cases de push
 
 ### Critérios de Aceitação
 
-- Interfaces de providers definidas no domínio
-- Stubs implementados e registrados no DI
-- Console mostra logs simulando ações (notificações, calendário)
-- Use Cases chamam providers sem saber que são stubs
-- Arquitetura permite trocar stub por implementação real facilmente
-- Documentação clara de como implementar versões reais  
+- Notificações push chegam com o app fechado
+- Eventos de calendário são criados ao aceitar consulta
+- Eventos são removidos ao cancelar/recusar
+- Fluxo de permissões bloqueia uso do app até liberar
+- Tokens são armazenados no usuário
 
 ### Notas Técnicas
 
-- Stubs são apenas para preparar a arquitetura, não fazem nada real
-- Logs devem ser claros: `[Stub]` no início
-- Em produção futura, basta trocar no DI Container
+- Push requer build nativo (development/release), não funciona no Expo Go
+- O envio é feito via Supabase Edge Function
 
 ---
 
@@ -506,7 +496,7 @@ As integrações complexas (notificações push e calendário nativo) serão imp
   - Validar role no backend
 - [ ] Configurar regras de Auth do Firebase
 - [ ] Remover console.logs sensíveis
-- [ ] Validar inputs no backend (Cloud Functions se necessário)
+- [ ] Validar inputs no backend (regras do Firestore e/ou Supabase Edge Functions quando necessário)
 
 #### Tratamento de Erros
 - [ ] Erro de rede → mensagem + retry
@@ -522,11 +512,11 @@ As integrações complexas (notificações push e calendário nativo) serão imp
   - Como fazer build
 - [ ] Criar CONTRIBUTING.md (se open source)
 - [ ] Documentar variáveis de ambiente necessárias
-- [ ] Criar guia de deploy (Expo EAS)
+- [ ] Criar guia de build local (Xcode/Gradle) e credenciais
 
 #### Build & Deploy
 - [ ] Testar build de desenvolvimento
-- [ ] Testar build de produção (Expo EAS)
+- [ ] Testar build de produção local (Xcode/Gradle)
 - [ ] Validar app em dispositivo real (Android/iOS)
 - [ ] Configurar CI/CD básico (opcional)
 
@@ -543,106 +533,51 @@ As integrações complexas (notificações push e calendário nativo) serão imp
 
 ### Notas Técnicas
 
-- Usar Expo EAS para builds
+- Build local (Xcode/Gradle) com credenciais configuradas
 - Testar em iOS Simulator e Android Emulator
 - Validar regras do Firestore com Emulator Suite
-
----
-
-## Definição de MVP
-
-### MVP Mínimo (Sprints 1-4)
-
-O app estará **100% funcional** para uso real após Sprint 4:
-
-**Funcionalidades Incluídas:**
--  Autenticação (login/registro)
--  Visualização de disponibilidade (calendário)
--  Solicitação de consultas
--  Aceitar/Recusar consultas
--  Cancelamento de consultas
--  Reativação de consultas (nutricionista)
--  Agendas funcionais (paciente e nutricionista)
--  Atualização em tempo real
-
-**Não Incluído no MVP:**
--  Notificações push reais (apenas stubs)
--  Integração com calendário nativo (apenas stubs)
--  Edição de perfil
--  Recuperação de senha
-
-**Tempo Estimado:** 4-6 semanas
-
----
-
-## Roadmap Pós-MVP
-
-### Fase 2: Integrações Reais (Futuro)
-
-Quando viável implementar:
-
-1. **Notificações Push**
-   - Substituir `StubNotificationProvider` por `ExpoNotificationProvider`
-   - Implementar lembretes (24h e 1h antes)
-   - Notificações de mudança de status
-
-2. **Calendário Nativo**
-   - Substituir `StubCalendarProvider` por `ExpoCalendarProvider`
-   - Solicitar permissões
-   - Sincronizar eventos automaticamente
-
-3. **Melhorias de UX**
-   - Recuperação de senha
-   - Edição de perfil
-   - Upload de foto de perfil
-   - Histórico de consultas
-
-4. **Admin/Nutricionista**
-   - Dashboard com estatísticas
-   - Relatórios de consultas
-   - Gestão de disponibilidade pelo app
 
 ---
 
 ## Checklist por Sprint
 
 ### Sprint 1
-- [ ] Estrutura de pastas criada
-- [ ] Firebase configurado
-- [ ] Login funcionando
-- [ ] Registro funcionando
-- [ ] Navegação por perfil funcionando
-- [ ] Testes passando
+- [x] Estrutura de pastas criada
+- [x] Firebase configurado
+- [x] Login funcionando
+- [x] Registro funcionando
+- [x] Navegação por perfil funcionando
+- [x] Testes passando
 
 ### Sprint 2
-- [ ] Calendário exibindo disponibilidade
-- [ ] Solicitação de consulta funcionando
-- [ ] Lista de consultas do paciente funcionando
-- [ ] Atualização em tempo real funcionando
-- [ ] Testes passando
+- [x] Calendário exibindo disponibilidade
+- [x] Solicitação de consulta funcionando
+- [x] Lista de consultas do paciente funcionando
+- [x] Atualização em tempo real funcionando
+- [x] Testes passando
 
 ### Sprint 3
-- [ ] Lista de pendentes funcionando
-- [ ] Aceitar consulta funcionando
-- [ ] Recusar consulta funcionando
-- [ ] Validação de conflito funcionando
-- [ ] Agenda da nutricionista funcionando
-- [ ] Testes passando
+- [x] Lista de pendentes funcionando
+- [x] Aceitar consulta funcionando
+- [x] Recusar consulta funcionando
+- [x] Validação de conflito funcionando
+- [x] Agenda da nutricionista funcionando
+- [x] Testes passando
 
 ### Sprint 4
-- [ ] Cancelamento funcionando
-- [ ] Reativação funcionando
-- [ ] Pull-to-refresh em todas as listas
-- [ ] Tratamento de erros completo
-- [ ] Feedback visual em todas as ações
-- [ ] Testes passando
+- [x] Cancelamento funcionando
+- [x] Reativação funcionando
+- [x] Pull-to-refresh em todas as listas
+- [x] Tratamento de erros completo
+- [x] Feedback visual em todas as ações
+- [x] Testes passando
 
 ### Sprint 5
-- [ ] Interfaces de providers criadas
-- [ ] Stubs implementados
-- [ ] Use Cases integrados com stubs
-- [ ] Documentação de implementação futura
-- [ ] Testes passando
+- [x] Calendário nativo funcionando
+- [x] Push notifications funcionando
+- [x] Permissões obrigatórias implementadas
+- [x] Tokens armazenados no usuário
+- [x] Testes passando
 
 ### Sprint 6
 - [ ] UX revisado
@@ -651,47 +586,3 @@ Quando viável implementar:
 - [ ] README atualizado
 - [ ] Build de produção funcionando
 - [ ] App testado em dispositivo real
-
----
-
-## Notas Importantes
-
-### Priorização
-
-**Alta Prioridade (MVP):**
-- Sprints 1, 2, 3, 4
-
-**Média Prioridade:**
-- Sprint 6 (polimento)
-
-**Baixa Prioridade (Opcional):**
-- Sprint 5 (stubs)
-
-### Riscos e Mitigações
-
-| Risco | Impacto | Mitigação |
-|-------|---------|-----------|
-| Complexidade do Firebase | Alto | Estudar documentação antes de começar |
-| Validação de conflitos | Médio | Usar transactions do Firestore |
-| Performance de listas | Médio | Implementar paginação se necessário |
-| Testes complexos | Baixo | Começar com testes simples |
-
-### Dependências Técnicas
-
-- **React Native + Expo SDK 52+**
-- **Firebase (Auth + Firestore)**
-- **react-native-calendars**
-- **TypeScript**
-- **Jest + Testing Library**
-
----
-
-## Meta Final
-
-Após completar as sprints do MVP (1-4), o app estará:
-
-- Funcional para uso real
-- Testado com cobertura adequada
-- Seguro com regras do Firebase
-- Preparado para futuras integrações
-- Documentado para manutenção

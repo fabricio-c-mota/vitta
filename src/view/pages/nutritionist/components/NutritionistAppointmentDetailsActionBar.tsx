@@ -27,8 +27,6 @@ export default function NutritionistAppointmentDetailsActionBar({
     onCancel,
     onReactivate,
 }: Props) {
-    if (!canHandle && !canCancel && !canReactivate) return null;
-
     if (canHandle) {
         return (
             <View style={styles.bottomBar}>
@@ -41,7 +39,7 @@ export default function NutritionistAppointmentDetailsActionBar({
                     {processing && confirmVariant === "reject" ? (
                         <ActivityIndicator color={colors.background} />
                     ) : (
-                        <Text style={styles.actionText}>Recusar</Text>
+                        <Text style={styles.actionText} maxFontSizeMultiplier={1.2}>Recusar</Text>
                     )}
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -53,7 +51,7 @@ export default function NutritionistAppointmentDetailsActionBar({
                     {processing && confirmVariant === "accept" ? (
                         <ActivityIndicator color={colors.background} />
                     ) : (
-                        <Text style={styles.actionText}>Aceitar</Text>
+                        <Text style={styles.actionText} maxFontSizeMultiplier={1.2}>Aceitar</Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -72,7 +70,7 @@ export default function NutritionistAppointmentDetailsActionBar({
                     {processing && confirmVariant === "cancel" ? (
                         <ActivityIndicator color={colors.background} />
                     ) : (
-                        <Text style={styles.actionText}>Cancelar Consulta</Text>
+                        <Text style={styles.actionText} maxFontSizeMultiplier={1.2}>Cancelar Consulta</Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -90,7 +88,7 @@ export default function NutritionistAppointmentDetailsActionBar({
                 {processing && confirmVariant === "reactivate" ? (
                     <ActivityIndicator color={colors.background} />
                 ) : (
-                    <Text style={styles.actionText}>Aceitar</Text>
+                    <Text style={styles.actionText} maxFontSizeMultiplier={1.2}>Aceitar</Text>
                 )}
             </TouchableOpacity>
         </View>
@@ -99,20 +97,19 @@ export default function NutritionistAppointmentDetailsActionBar({
 
 const styles = StyleSheet.create({
     bottomBar: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        bottom: 0,
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.md,
-        paddingBottom: spacing.lg,
+        paddingBottom: spacing.md,
         backgroundColor: colors.surface,
+        borderTopWidth: 1,
+        borderTopColor: "rgba(0,0,0,0.06)",
         flexDirection: "row",
         gap: spacing.md,
     },
     actionButton: {
         flex: 1,
-        height: 60,
+        minHeight: 60,
+        paddingVertical: spacing.md,
         borderRadius: 30,
         alignItems: "center",
         justifyContent: "center",

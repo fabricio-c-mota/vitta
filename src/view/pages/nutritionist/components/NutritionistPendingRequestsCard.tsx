@@ -18,7 +18,7 @@ export default function NutritionistPendingRequestsCard({ pendingCount, onPress 
                 </View>
 
                 <View style={styles.cardTextWrapper}>
-                    <Text style={styles.cardTitle}>Solicitações Pendentes</Text>
+                    <Text style={styles.cardTitle} maxFontSizeMultiplier={1.2}>Solicitações Pendentes</Text>
                     <Text style={styles.cardSubtitle}>
                         {pendingCount > 0
                             ? `Você tem ${pendingCount} solicitação(ões) aguardando aprovação.`
@@ -28,7 +28,7 @@ export default function NutritionistPendingRequestsCard({ pendingCount, onPress 
             </View>
 
             <TouchableOpacity style={styles.primaryButton} onPress={onPress}>
-                <Text style={styles.primaryButtonText}>Ver solicitações</Text>
+                <Text style={styles.primaryButtonText} maxFontSizeMultiplier={1.2}>Ver solicitações</Text>
             </TouchableOpacity>
         </HomeCard>
     );

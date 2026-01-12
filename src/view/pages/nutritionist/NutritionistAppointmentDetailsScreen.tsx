@@ -89,10 +89,15 @@ export default function NutritionistAppointmentDetailsScreen() {
     }
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
             <ScreenHeader title="Detalhes da Consulta" />
 
-            <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 140 }}>
+            <ScrollView
+                style={styles.content}
+                contentContainerStyle={{
+                    paddingBottom: (canHandle || canCancel || canReactivate) ? 140 + Math.max(insets.bottom, spacing.lg) : spacing.lg,
+                }}
+            >
                 <NutritionistAppointmentDetailsHeader
                     status={appointment.status}
                     date={appointment.date}
@@ -102,17 +107,19 @@ export default function NutritionistAppointmentDetailsScreen() {
 
             </ScrollView>
 
-            <NutritionistAppointmentDetailsActionBar
-                canHandle={!!canHandle}
-                canCancel={!!canCancel}
-                canReactivate={!!canReactivate}
-                processing={processing}
-                confirmVariant={confirmVariant}
-                onAccept={() => handleAction("accept")}
-                onReject={() => handleAction("reject")}
-                onCancel={() => handleAction("cancel")}
-                onReactivate={() => handleAction("reactivate")}
-            />
+            {(canHandle || canCancel || canReactivate) && (
+                <NutritionistAppointmentDetailsActionBar
+                    canHandle={!!canHandle}
+                    canCancel={!!canCancel}
+                    canReactivate={!!canReactivate}
+                    processing={processing}
+                    confirmVariant={confirmVariant}
+                    onAccept={() => handleAction("accept")}
+                    onReject={() => handleAction("reject")}
+                    onCancel={() => handleAction("cancel")}
+                    onReactivate={() => handleAction("reactivate")}
+                />
+            )}
 
             <NutritionistAppointmentDetailsModals
                 confirmOpen={confirmOpen}

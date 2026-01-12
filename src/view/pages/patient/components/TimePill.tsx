@@ -21,7 +21,7 @@ export default function TimePill({ time, selected, onPress, disabled }: Props) {
         disabled && styles.pillDisabled,
       ]}
     >
-      <Text style={[styles.text, selected && styles.textActive]}>
+      <Text style={[styles.text, selected && styles.textActive]} maxFontSizeMultiplier={1.2}>
         {time}
       </Text>
     </TouchableOpacity>

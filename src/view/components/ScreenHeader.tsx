@@ -33,7 +33,7 @@ export default function ScreenHeader({ title, showBack = true, onBack, rightElem
                 <View style={styles.placeholder} />
             )}
 
-            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.title} maxFontSizeMultiplier={1.2}>{title}</Text>
 
             {rightElement || <View style={styles.placeholder} />}
         </View>
