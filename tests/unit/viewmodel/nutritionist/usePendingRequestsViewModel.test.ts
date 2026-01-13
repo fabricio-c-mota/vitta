@@ -330,4 +330,190 @@ describe('ViewModel de Solicitações Pendentes', () => {
 
         expect(unsubscribeMock).toHaveBeenCalled();
     });
+
+    it('deve retornar cedo quando nutritionistId é vazio', () => {
+        (mockListPendingAppointmentsUseCase.subscribePendingByNutritionist as jest.Mock).mockImplementation((id, callback) => {
+            callback([]);
+            return unsubscribeMock;
+        });
+
+        const { result } = renderHook(() =>
+            usePendingRequestsViewModel(
+                mockListPendingAppointmentsUseCase,
+                mockAcceptUseCase,
+                mockRejectUseCase,
+                mockGetUserByIdUseCase,
+                mockCalendarSyncUseCase,
+                mockAppointmentPushNotificationUseCase,
+                ''
+            )
+        );
+
+        expect(result.current.loading).toBe(false);
+        expect(mockListPendingAppointmentsUseCase.subscribePendingByNutritionist).not.toHaveBeenCalled();
+    });
+
+    it('deve ignorar erro ao sincronizar calendário no accept', async () => {
+        const appointment = createMockAppointment('appt-1');
+        (mockListPendingAppointmentsUseCase.subscribePendingByNutritionist as jest.Mock).mockImplementation((id, callback) => {
+            callback([appointment]);
+            return unsubscribeMock;
+        });
+        (mockAcceptUseCase.acceptAppointment as jest.Mock).mockResolvedValue({ ...appointment, status: 'accepted' });
+        (mockCalendarSyncUseCase.syncAccepted as jest.Mock).mockRejectedValue(new Error('Sync failed'));
+
+        const { result } = renderHook(() =>
+            usePendingRequestsViewModel(
+                mockListPendingAppointmentsUseCase,
+                mockAcceptUseCase,
+                mockRejectUseCase,
+                mockGetUserByIdUseCase,
+                mockCalendarSyncUseCase,
+                mockAppointmentPushNotificationUseCase,
+                'nutri-1'
+            )
+        );
+
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        let success: boolean = false;
+        await act(async () => {
+            success = await result.current.acceptAppointment('appt-1');
+        });
+
+        expect(success).toBe(true);
+        expect(result.current.successMessage).toBe('Consulta aceita com sucesso!');
+    });
+
+    it('deve ignorar erro ao enviar notificação no accept', async () => {
+        const appointment = createMockAppointment('appt-1');
+        (mockListPendingAppointmentsUseCase.subscribePendingByNutritionist as jest.Mock).mockImplementation((id, callback) => {
+            callback([appointment]);
+            return unsubscribeMock;
+        });
+        (mockAcceptUseCase.acceptAppointment as jest.Mock).mockResolvedValue({ ...appointment, status: 'accepted' });
+        (mockAppointmentPushNotificationUseCase.notify as jest.Mock).mockRejectedValue(new Error('Notification failed'));
+
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+        const { result } = renderHook(() =>
+            usePendingRequestsViewModel(
+                mockListPendingAppointmentsUseCase,
+                mockAcceptUseCase,
+                mockRejectUseCase,
+                mockGetUserByIdUseCase,
+                mockCalendarSyncUseCase,
+                mockAppointmentPushNotificationUseCase,
+                'nutri-1'
+            )
+        );
+
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        let success: boolean = false;
+        await act(async () => {
+            success = await result.current.acceptAppointment('appt-1');
+        });
+
+        expect(success).toBe(true);
+        expect(consoleSpy).toHaveBeenCalledWith('Falha ao enviar notificacao de aceite:', expect.any(Error));
+
+        consoleSpy.mockRestore();
+    });
+
+    it('deve ignorar erro ao enviar notificação no reject', async () => {
+        const appointment = createMockAppointment('appt-1');
+        (mockListPendingAppointmentsUseCase.subscribePendingByNutritionist as jest.Mock).mockImplementation((id, callback) => {
+            callback([appointment]);
+            return unsubscribeMock;
+        });
+        (mockRejectUseCase.rejectAppointment as jest.Mock).mockResolvedValue({ ...appointment, status: 'rejected' });
+        (mockAppointmentPushNotificationUseCase.notify as jest.Mock).mockRejectedValue(new Error('Notification failed'));
+
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+        const { result } = renderHook(() =>
+            usePendingRequestsViewModel(
+                mockListPendingAppointmentsUseCase,
+                mockAcceptUseCase,
+                mockRejectUseCase,
+                mockGetUserByIdUseCase,
+                mockCalendarSyncUseCase,
+                mockAppointmentPushNotificationUseCase,
+                'nutri-1'
+            )
+        );
+
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        let success: boolean = false;
+        await act(async () => {
+            success = await result.current.rejectAppointment('appt-1');
+        });
+
+        expect(success).toBe(true);
+        expect(consoleSpy).toHaveBeenCalledWith('Falha ao enviar notificacao de recusa:', expect.any(Error));
+
+        consoleSpy.mockRestore();
+    });
+
+    it('deve tratar erro genérico ao aceitar consulta', async () => {
+        (mockListPendingAppointmentsUseCase.subscribePendingByNutritionist as jest.Mock).mockImplementation((id, callback) => {
+            callback([]);
+            return unsubscribeMock;
+        });
+        (mockAcceptUseCase.acceptAppointment as jest.Mock).mockRejectedValue(new Error('Generic error'));
+
+        const { result } = renderHook(() =>
+            usePendingRequestsViewModel(
+                mockListPendingAppointmentsUseCase,
+                mockAcceptUseCase,
+                mockRejectUseCase,
+                mockGetUserByIdUseCase,
+                mockCalendarSyncUseCase,
+                mockAppointmentPushNotificationUseCase,
+                'nutri-1'
+            )
+        );
+
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        let success: boolean = true;
+        await act(async () => {
+            success = await result.current.acceptAppointment('appt-1');
+        });
+
+        expect(success).toBe(false);
+        expect(result.current.error).toBe('Erro ao aceitar consulta. Tente novamente.');
+    });
+
+    it('deve tratar erro genérico ao recusar consulta', async () => {
+        (mockListPendingAppointmentsUseCase.subscribePendingByNutritionist as jest.Mock).mockImplementation((id, callback) => {
+            callback([]);
+            return unsubscribeMock;
+        });
+        (mockRejectUseCase.rejectAppointment as jest.Mock).mockRejectedValue(new Error('Generic error'));
+
+        const { result } = renderHook(() =>
+            usePendingRequestsViewModel(
+                mockListPendingAppointmentsUseCase,
+                mockAcceptUseCase,
+                mockRejectUseCase,
+                mockGetUserByIdUseCase,
+                mockCalendarSyncUseCase,
+                mockAppointmentPushNotificationUseCase,
+                'nutri-1'
+            )
+        );
+
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        let success: boolean = true;
+        await act(async () => {
+            success = await result.current.rejectAppointment('appt-1');
+        });
+
+        expect(success).toBe(false);
+        expect(result.current.error).toBe('Erro ao recusar consulta. Tente novamente.');
+    });
 });

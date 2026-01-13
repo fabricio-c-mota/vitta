@@ -338,4 +338,42 @@ describe('ViewModel de Agendamento de Consultas', () => {
         expect(result.current.navigationRoute).toBeNull();
     });
 
+    it('deve retornar cedo quando getNutritionistUseCase não é fornecido', async () => {
+        const { result } = renderHook(() =>
+            useScheduleViewModel(
+                mockGetAvailableTimeSlotsUseCase,
+                mockRequestAppointmentUseCase,
+                mockAppointmentPushNotificationUseCase
+                // getNutritionistUseCase não fornecido
+            )
+        );
+
+        await act(async () => {
+            await result.current.loadNutritionist();
+        });
+
+        expect(result.current.nutritionist).toBeNull();
+    });
+
+    it('deve tratar erro genérico ao carregar nutricionista', async () => {
+        (mockGetNutritionistUseCase.getNutritionist as jest.Mock).mockRejectedValue(
+            new Error('Generic error')
+        );
+
+        const { result } = renderHook(() =>
+            useScheduleViewModel(
+                mockGetAvailableTimeSlotsUseCase,
+                mockRequestAppointmentUseCase,
+                mockAppointmentPushNotificationUseCase,
+                mockGetNutritionistUseCase
+            )
+        );
+
+        await act(async () => {
+            await result.current.loadNutritionist();
+        });
+
+        expect(result.current.nutritionistError).toBe('Erro ao carregar nutricionista.');
+    });
+
 });
